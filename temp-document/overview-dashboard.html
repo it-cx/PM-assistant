@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>环卫云 - 总览大屏（无人场景集成）</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg-primary: #060e1a;
+    --bg-secondary: #0a192f;
+    --bg-card: rgba(10, 30, 60, 0.85);
+    --border-color: rgba(64, 180, 255, 0.15);
+    --accent-cyan: #00d4ff;
+    --accent-blue: #40b4ff;
+    --accent-green: #00e676;
+    --accent-orange: #ff9100;
+    --accent-red: #ff5252;
+    --text-primary: #e8f0fe;
+    --text-secondary: rgba(200, 220, 255, 0.6);
+    --text-value: #ffffff;
+    --glow-cyan: 0 0 20px rgba(0, 212, 255, 0.3);
+  }
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: "PingFang SC", "Microsoft YaHei", -apple-system, sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+  .dashboard {
+    display: grid;
+    grid-template-columns: 320px 1fr 320px;
+    grid-template-rows: 64px 1fr;
+    height: 100vh;
+    gap: 0;
+  }
+
+  /* Header */
+  .header {
+    grid-column: 1 / -1;
+    background: linear-gradient(180deg, rgba(10, 25, 47, 0.98), rgba(6, 14, 26, 0.95));
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+  }
+  .header-title {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header-nav {
+    display: flex;
+    gap: 32px;
+  }
+  .header-nav span {
+    font-size: 14px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px 0;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s;
+  }
+  .header-nav span.active {
+    color: var(--accent-cyan);
+    border-bottom-color: var(--accent-cyan);
+  }
+  .header-nav span:hover { color: var(--accent-cyan); }
+  .header-time {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Side Panels */
+  .left-panel, .right-panel {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+    opacity: 0.6;
+  }
+  .card-title {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card-title .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent-cyan);
+    box-shadow: 0 0 6px var(--accent-cyan);
+  }
+
+  /* Metric blocks */
+  .metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(64, 180, 255, 0.06);
+  }
+  .metric-row:last-child { border-bottom: none; }
+  .metric-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .metric-value {
+    font-size: 20px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-value);
+  }
+  .metric-value .unit {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-left: 2px;
+  }
+  .metric-value.highlight {
+    color: var(--accent-cyan);
+    text-shadow: var(--glow-cyan);
+  }
+  .metric-value.green { color: var(--accent-green); }
+  .metric-value.orange { color: var(--accent-orange); }
+
+  /* Robot Cleaning Module (existing, enhanced) */
+  .robot-module {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .robot-module::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-green), transparent);
+    opacity: 0.7;
+  }
+  .robot-module .card-title .dot {
+    background: var(--accent-green);
+    box-shadow: 0 0 6px var(--accent-green);
+  }
+  .robot-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .robot-stat {
+    background: rgba(0, 230, 118, 0.05);
+    border: 1px solid rgba(0, 230, 118, 0.12);
+    border-radius: 6px;
+    padding: 10px;
+    text-align: center;
+  }
+  .robot-stat .val {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent-green);
+    font-variant-numeric: tabular-nums;
+  }
+  .robot-stat .lbl {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+  .robot-stat.accent-cyan {
+    background: rgba(0, 212, 255, 0.05);
+    border-color: rgba(0, 212, 255, 0.12);
+  }
+  .robot-stat.accent-cyan .val { color: var(--accent-cyan); }
+
+  /* Center Map */
+  .map-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .map-bg {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+
+  /* China Map SVG Placeholder */
+  .china-map {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .china-map svg {
+    width: 85%;
+    height: 85%;
+    opacity: 0.25;
+  }
+
+  /* Map project dots */
+  .project-dot {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+  }
+  .project-dot::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    opacity: 0.4;
+    animation: pulse-ring 2s infinite;
+  }
+  .project-dot.unmanned {
+    background: var(--accent-cyan);
+    color: var(--accent-cyan);
+    box-shadow: 0 0 12px var(--accent-cyan);
+  }
+  .project-dot.normal {
+    background: var(--accent-blue);
+    color: var(--accent-blue);
+    box-shadow: 0 0 8px rgba(64, 180, 255, 0.4);
+  }
+  .project-dot.unmanned-big {
+    width: 16px;
+    height: 16px;
+    margin: -2px;
+  }
+  .project-dot.unmanned-big::after {
+    inset: -8px;
+    border-width: 2px;
+  }
+  @keyframes pulse-ring {
+    0% { transform: scale(1); opacity: 0.4; }
+    70% { transform: scale(2); opacity: 0; }
+    100% { transform: scale(1); opacity: 0; }
+  }
+
+  /* Map legend */
+  .map-legend {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(10, 25, 47, 0.9);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 10px 14px;
+    display: flex;
+    gap: 20px;
+    z-index: 20;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .legend-dot.unmanned { background: var(--accent-cyan); box-shadow: 0 0 6px var(--accent-cyan); }
+  .legend-dot.normal { background: var(--accent-blue); }
+
+  /* Map summary overlay */
+  .map-summary {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(6, 14, 26, 0.85);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px 24px;
+    display: flex;
+    gap: 32px;
+    z-index: 20;
+  }
+  .map-summary-item {
+    text-align: center;
+  }
+  .map-summary-item .val {
+    font-size: 24px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .map-summary-item .val.cyan { color: var(--accent-cyan); text-shadow: var(--glow-cyan); }
+  .map-summary-item .val.green { color: var(--accent-green); }
+  .map-summary-item .lbl {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  /* Right panel - project list */
+  .project-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: background 0.2s;
+  }
+  .project-list-item:hover { background: rgba(64, 180, 255, 0.06); }
+  .project-list-item .name { color: var(--text-primary); }
+  .project-list-item .status {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+  }
+  .status.online { background: rgba(0, 230, 118, 0.15); color: var(--accent-green); }
+  .status.offline { background: rgba(255, 82, 82, 0.15); color: var(--accent-red); }
+
+  /* Progress bars */
+  .progress-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(64, 180, 255, 0.1);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+
+  /* Grid lines decoration */
+  .grid-line-h, .grid-line-v {
+    position: absolute;
+    background: rgba(64, 180, 255, 0.03);
+    z-index: 0;
+  }
+  .grid-line-h { width: 100%; height: 1px; }
+  .grid-line-v { height: 100%; width: 1px; }
+
+  /* Tooltip */
+  .tooltip {
+    position: absolute;
+    background: rgba(6, 14, 26, 0.95);
+    border: 1px solid var(--accent-cyan);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 12px;
+    z-index: 30;
+    pointer-events: none;
+    display: none;
+    min-width: 160px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+  .tooltip.show { display: block; }
+  .tooltip-title {
+    font-weight: 600;
+    color: var(--accent-cyan);
+    margin-bottom: 6px;
+  }
+  .tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+    color: var(--text-secondary);
+  }
+  .tooltip-row span:last-child {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  /* Unmanned vehicle map icon */
+  .vehicle-marker {
+    position: absolute;
+    z-index: 15;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .vehicle-marker:hover { transform: scale(1.2); }
+  .vehicle-marker svg {
+    filter: drop-shadow(0 0 6px var(--accent-cyan));
+  }
+
+  /* Scan line effect */
+  .scan-line {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(0, 212, 255, 0.02) 45%,
+      rgba(0, 212, 255, 0.06) 50%,
+      rgba(0, 212, 255, 0.02) 55%,
+      transparent 100%
+    );
+    animation: scan 6s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+  @keyframes scan {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+  }
+
+  /* Separator */
+  .section-sep {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+    margin: 4px 0;
+  }
+</style>
+</head>
+<body>
+<div class="dashboard">
+  <!-- Header -->
+  <header class="header">
+    <div class="header-title">智慧环卫云平台</div>
+    <nav class="header-nav">
+      <span class="active">总览大屏</span>
+      <span>作业监管</span>
+      <span>物资管理</span>
+      <span>人员管理</span>
+      <span>系统设置</span>
+    </nav>
+    <div class="header-time">2026-06-10 14:32:18</div>
+  </header>
+
+  <!-- Left Panel -->
+  <div class="left-panel">
+    <!-- Existing: Project Stats -->
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>项目概况</div>
+      <div class="metric-row">
+        <span class="metric-label">全国项目数</span>
+        <span class="metric-value">128</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-label">在线项目</span>
+        <span class="metric-value highlight">116</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-label">覆盖城市</span>
+        <span class="metric-value">47</span>
+      </div>
+    </div>
+
+    <!-- Existing: Personnel -->
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>人员概况</div>
+      <div class="metric-row">
+        <span class="metric-label">在岗人数</span>
+        <span class="metric-value">3,842</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-label">出勤率</span>
+        <span class="metric-value green">94.7<span class="unit">%</span></span>
+      </div>
+    </div>
+
+    <!-- Existing: Vehicle -->
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>车辆概况</div>
+      <div class="metric-row">
+        <span class="metric-label">作业车辆</span>
+        <span class="metric-value">1,256</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-label">在线车辆</span>
+        <span class="metric-value highlight">1,089</span>
+      </div>
+    </div>
+
+    <!-- NEW: Robot Cleaning Module (Enhanced with unmanned data) -->
+    <div class="robot-module">
+      <div class="card-title"><span class="dot"></span>机器人清扫</div>
+      <div class="robot-stats">
+        <div class="robot-stat accent-cyan">
+          <div class="val">86</div>
+          <div class="lbl">无人车总数</div>
+        </div>
+        <div class="robot-stat accent-cyan">
+          <div class="val">72</div>
+          <div class="lbl">在线作业</div>
+        </div>
+        <div class="robot-stat">
+          <div class="val">2.4</div>
+          <div class="lbl">清扫效率 km2/h</div>
+        </div>
+        <div class="robot-stat">
+          <div class="val">18.6</div>
+          <div class="lbl">百公里能耗 kWh</div>
+        </div>
+      </div>
+      <div class="progress-bar" style="margin-top:12px">
+        <div class="progress-fill" style="width:83.7%; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green))"></div>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-top:4px">
+        <span style="font-size:11px; color:var(--text-secondary)">无人场景覆盖率</span>
+        <span style="font-size:11px; color:var(--accent-green)">83.7%</span>
+      </div>
+    </div>
+
+    <!-- Alarm -->
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--accent-orange); box-shadow:0 0 6px var(--accent-orange)"></span>告警信息</div>
+      <div class="metric-row">
+        <span class="metric-label">今日告警</span>
+        <span class="metric-value orange">7</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-label">未处理</span>
+        <span class="metric-value" style="color:var(--accent-red)">3</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Center: Map -->
+  <div class="map-container">
+    <div class="scan-line"></div>
+
+    <!-- Grid decoration lines -->
+    <div class="grid-line-h" style="top:25%"></div>
+    <div class="grid-line-h" style="top:50%"></div>
+    <div class="grid-line-h" style="top:75%"></div>
+    <div class="grid-line-v" style="left:33%"></div>
+    <div class="grid-line-v" style="left:66%"></div>
+
+    <div class="map-bg">
+      <!-- Simplified China Map Outline -->
+      <div class="china-map">
+        <svg viewBox="0 0 600 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M180 80 L220 60 L270 55 L310 65 L340 50 L380 55 L420 70 L450 90 L460 120 L470 160 L460 200 L440 230 L450 260 L440 290 L420 320 L400 340 L370 355 L340 370 L310 380 L280 370 L260 350 L240 340 L220 350 L200 340 L180 320 L160 290 L150 260 L140 230 L135 200 L140 170 L150 140 L160 110 Z"
+            stroke="rgba(64,180,255,0.25)" stroke-width="1" fill="rgba(64,180,255,0.03)"/>
+          <!-- Hainan -->
+          <ellipse cx="310" cy="400" rx="20" ry="15" stroke="rgba(64,180,255,0.2)" stroke-width="1" fill="rgba(64,180,255,0.03)"/>
+          <!-- Taiwan -->
+          <ellipse cx="430" cy="310" rx="8" ry="18" stroke="rgba(64,180,255,0.2)" stroke-width="1" fill="rgba(64,180,255,0.03)"/>
+        </svg>
+      </div>
+
+      <!-- Map Summary Overlay -->
+      <div class="map-summary">
+        <div class="map-summary-item">
+          <div class="val cyan">23</div>
+          <div class="lbl">无人场景项目</div>
+        </div>
+        <div class="map-summary-item">
+          <div class="val green">72</div>
+          <div class="lbl">在线无人车</div>
+        </div>
+        <div class="map-summary-item">
+          <div class="val" style="color:var(--text-value)">16</div>
+          <div class="lbl">覆盖城市</div>
+        </div>
+      </div>
+
+      <!-- Project dots - unmanned (cyan, larger, with pulse) -->
+      <div class="project-dot unmanned unmanned-big" style="top:28%; left:62%" onclick="showTooltip(event, '北京亦庄项目', 12, 10, '运营中')"></div>
+      <div class="project-dot unmanned" style="top:38%; left:55%" onclick="showTooltip(event, '深圳前海项目', 8, 7, '运营中')"></div>
+      <div class="project-dot unmanned" style="top:32%; left:58%" onclick="showTooltip(event, '上海临港项目', 6, 5, '运营中')"></div>
+      <div class="project-dot unmanned" style="top:42%; left:48%" onclick="showTooltip(event, '广州黄埔项目', 5, 4, '运营中')"></div>
+      <div class="project-dot unmanned" style="top:35%; left:44%" onclick="showTooltip(event, '武汉光谷项目', 4, 4, '运营中')"></div>
+      <div class="project-dot unmanned" style="top:40%; left:52%" onclick="showTooltip(event, '长沙高新区项目', 3, 3, '运营中')"></div>
+      <div class="project-dot unmanned" style="top:30%; left:42%" onclick="showTooltip(event, '郑州郑东项目', 4, 3, '运营中')"></div>
+      <div class="project-dot unmanned" style="top:45%; left:40%" onclick="showTooltip(event, '成都天府项目', 3, 2, '运营中')"></div>
+
+      <!-- Project dots - normal projects (blue, smaller) -->
+      <div class="project-dot normal" style="top:50%; left:60%"></div>
+      <div class="project-dot normal" style="top:55%; left:45%"></div>
+      <div class="project-dot normal" style="top:48%; left:38%"></div>
+      <div class="project-dot normal" style="top:60%; left:52%"></div>
+      <div class="project-dot normal" style="top:25%; left:50%"></div>
+      <div class="project-dot normal" style="top:65%; left:58%"></div>
+      <div class="project-dot normal" style="top:35%; left:35%"></div>
+      <div class="project-dot normal" style="top:52%; left:42%"></div>
+      <div class="project-dot normal" style="top:43%; left:65%"></div>
+      <div class="project-dot normal" style="top:70%; left:48%"></div>
+
+      <!-- Tooltip -->
+      <div class="tooltip" id="tooltip">
+        <div class="tooltip-title" id="tooltip-title"></div>
+        <div class="tooltip-row"><span>无人车总数</span><span id="tooltip-total"></span></div>
+        <div class="tooltip-row"><span>在线数量</span><span id="tooltip-online"></span></div>
+        <div class="tooltip-row"><span>状态</span><span id="tooltip-status"></span></div>
+      </div>
+
+      <!-- Legend -->
+      <div class="map-legend">
+        <div class="legend-item"><div class="legend-dot unmanned"></div>无人场景项目</div>
+        <div class="legend-item"><div class="legend-dot normal"></div>普通项目</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="right-panel">
+    <!-- Unmanned Scene Deploy Breadth -->
+    <div class="card" style="border-color: rgba(0, 212, 255, 0.2);">
+      <div class="card-title"><span class="dot"></span>无人场景部署</div>
+      <div class="metric-row">
+        <span class="metric-label">部署项目</span>
+        <span class="metric-value highlight">23<span class="unit">个</span></span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-label">覆盖省份</span>
+        <span class="metric-value">12<span class="unit">个</span></span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-label">累计作业里程</span>
+        <span class="metric-value">48.6<span class="unit">万km</span></span>
+      </div>
+    </div>
+
+    <!-- Unmanned Projects Ranking -->
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>无人项目排行</div>
+      <div class="project-list-item">
+        <span class="name">1. 北京亦庄</span>
+        <span class="status online">12台在线</span>
+      </div>
+      <div class="project-list-item">
+        <span class="name">2. 深圳前海</span>
+        <span class="status online">7台在线</span>
+      </div>
+      <div class="project-list-item">
+        <span class="name">3. 上海临港</span>
+        <span class="status online">5台在线</span>
+      </div>
+      <div class="project-list-item">
+        <span class="name">4. 广州黄埔</span>
+        <span class="status online">4台在线</span>
+      </div>
+      <div class="project-list-item">
+        <span class="name">5. 武汉光谷</span>
+        <span class="status online">4台在线</span>
+      </div>
+      <div class="project-list-item">
+        <span class="name">6. 郑州郑东</span>
+        <span class="status online">3台在线</span>
+      </div>
+    </div>
+
+    <!-- Operation Stats -->
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>今日作业统计</div>
+      <div class="metric-row">
+        <span class="metric-label">作业面积</span>
+        <span class="metric-value">1,284<span class="unit">km2</span></span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-label">平均清扫效率</span>
+        <span class="metric-value green">2.4<span class="unit">km2/h</span></span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-label">平均百公里能耗</span>
+        <span class="metric-value">18.6<span class="unit">kWh</span></span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-label">任务完成率</span>
+        <span class="metric-value green">91.3<span class="unit">%</span></span>
+      </div>
+    </div>
+
+    <!-- Monthly Trend -->
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>无人作业趋势</div>
+      <canvas id="trendChart" style="width:100%; height:120px;"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+// Tooltip
+function showTooltip(e, name, total, online, status) {
+  const t = document.getElementById('tooltip');
+  document.getElementById('tooltip-title').textContent = name;
+  document.getElementById('tooltip-total').textContent = total + ' 台';
+  document.getElementById('tooltip-online').textContent = online + ' 台';
+  document.getElementById('tooltip-status').textContent = status;
+  t.style.left = (e.pageX + 16) + 'px';
+  t.style.top = (e.pageY - 40) + 'px';
+  t.classList.add('show');
+  e.stopPropagation();
+}
+document.addEventListener('click', () => {
+  document.getElementById('tooltip').classList.remove('show');
+});
+
+// Simple trend chart (canvas)
+const canvas = document.getElementById('trendChart');
+if (canvas) {
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+
+  const w = rect.width, h = rect.height;
+  const data = [32, 45, 58, 72, 86, 68, 72, 91, 78, 86, 95, 72];
+  const max = 100;
+  const pad = { top: 10, bottom: 20, left: 5, right: 5 };
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(64,180,255,0.08)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 4; i++) {
+    const y = pad.top + (h - pad.top - pad.bottom) * (i / 3);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+  }
+
+  // Area fill
+  const points = data.map((v, i) => ({
+    x: pad.left + (w - pad.left - pad.right) * (i / (data.length - 1)),
+    y: pad.top + (h - pad.top - pad.bottom) * (1 - v / max)
+  }));
+
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, h - pad.bottom);
+  points.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(points[points.length - 1].x, h - pad.bottom);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, pad.top, 0, h - pad.bottom);
+  grad.addColorStop(0, 'rgba(0,212,255,0.2)');
+  grad.addColorStop(1, 'rgba(0,212,255,0)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+  ctx.strokeStyle = '#00d4ff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Dots
+  points.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#00d4ff';
+    ctx.fill();
+  });
+
+  // Labels
+  ctx.font = '10px sans-serif';
+  ctx.fillStyle = 'rgba(200,220,255,0.4)';
+  ctx.textAlign = 'center';
+  const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  points.forEach((p, i) => ctx.fillText(months[i], p.x, h - 4));
+}
+</script>
+</body>
+</html>

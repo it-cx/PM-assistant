@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SWEEP-OPS · 无人清扫车运营驾驶舱</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Space+Mono:wght@400;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg-void: #050810;
+    --bg-deep: #0A0F1C;
+    --bg-panel: #0E1525;
+    --bg-elev: #131C30;
+    --border-line: rgba(82, 196, 255, 0.12);
+    --border-strong: rgba(82, 196, 255, 0.28);
+    --text-pri: #E8F4FF;
+    --text-sec: #B0C0DC;
+    --text-mute: #7E8DAB;
+    --cyan: #00E5FF;
+    --cyan-dim: #00B8D4;
+    --amber: #FFB546;
+    --amber-dim: #E89500;
+    --magenta: #FF3D9A;
+    --lime: #B6FF3D;
+    --violet: #8B5CF6;
+    --rose: #FF5470;
+    --teal: #2EE6C5;
+  }
+  * { box-sizing: border-box; }
+
+  /* 全局隐藏滚动条，保留滚动功能 */
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  *::-webkit-scrollbar {
+    display: none;
+  }
+  html, body {
+    margin: 0; background: var(--bg-void); color: var(--text-pri);
+    font-family: 'Noto Sans SC', 'Space Mono', sans-serif;
+    overflow-x: hidden; min-height: 100vh;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image:
+      radial-gradient(ellipse 70% 50% at 15% 0%, rgba(0, 229, 255, 0.10), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 95% 15%, rgba(255, 181, 70, 0.07), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 50% 110%, rgba(139, 92, 246, 0.06), transparent 60%),
+      linear-gradient(rgba(82, 196, 255, 0.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(82, 196, 255, 0.022) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 100% 100%, 56px 56px, 56px 56px;
+    pointer-events: none; z-index: 0;
+  }
+  body::after {
+    content: ''; position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.4'/></svg>");
+    opacity: 0.025; mix-blend-mode: overlay; pointer-events: none; z-index: 1;
+  }
+
+  .app { position: relative; z-index: 2; padding: 16px 22px 28px; max-width: 1820px; margin: 0 auto; }
+
+  .f-display { font-family: 'Orbitron', sans-serif; letter-spacing: 0.06em; }
+  .f-mono { font-family: 'Space Mono', monospace; }
+  .num { font-family: 'Space Mono', monospace; font-variant-numeric: tabular-nums; }
+
+  /* ============ 顶栏 ============ */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 11px 22px;
+    background: linear-gradient(180deg, rgba(14,21,37,0.95), rgba(14,21,37,0.6));
+    border: 1px solid var(--border-line);
+    border-radius: 10px; backdrop-filter: blur(8px);
+    position: relative; overflow: hidden;
+  }
+  .topbar::before {
+    content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent); opacity: 0.6;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand-mark {
+    width: 38px; height: 38px; display: grid; place-items: center;
+    border: 1px solid var(--cyan); border-radius: 8px;
+    background: radial-gradient(circle at 30% 30%, rgba(0,229,255,0.3), rgba(0,229,255,0.05));
+    box-shadow: 0 0 18px rgba(0,229,255,0.35), inset 0 0 12px rgba(0,229,255,0.2);
+    position: relative;
+  }
+  .brand-mark svg { width: 22px; height: 22px; color: var(--cyan); }
+  .brand-mark::after {
+    content: ''; position: absolute; inset: -3px;
+    border: 1px solid rgba(0,229,255,0.4); border-radius: 10px;
+    animation: pulse-ring 2.4s ease-out infinite;
+  }
+  @keyframes pulse-ring {
+    0% { transform: scale(1); opacity: 0.7; }
+    100% { transform: scale(1.25); opacity: 0; }
+  }
+  .brand-title { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 18px; letter-spacing: 0.12em; line-height: 1; }
+  .brand-sub { font-size: 12.5px; color: var(--text-sec); letter-spacing: 0.18em; margin-top: 5px; text-transform: uppercase; }
+  .status-cluster { display: flex; align-items: center; gap: 24px; }
+  .status-item { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+  .status-label { font-size: 11.5px; color: var(--text-sec); letter-spacing: 0.18em; text-transform: uppercase; }
+  .status-val { font-family: 'Space Mono', monospace; font-size: 16px; color: var(--text-pri); }
+  .live-dot {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 14px; border: 1px solid var(--lime); border-radius: 999px;
+    background: rgba(182, 255, 61, 0.08); font-size: 12px; letter-spacing: 0.18em;
+    color: var(--lime); font-family: 'Space Mono', monospace;
+  }
+  .live-dot::before {
+    content: ''; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--lime); box-shadow: 0 0 8px var(--lime);
+    animation: blink 1.4s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100% {opacity:1} 50% {opacity:0.35} }
+
+  .dim-switch {
+    display: inline-flex; background: var(--bg-deep);
+    border: 1px solid var(--border-line); border-radius: 8px;
+    padding: 3px;
+  }
+  .dim-switch button {
+    padding: 7px 16px; font-size: 13px; font-family: 'Space Mono', monospace;
+    letter-spacing: 0.1em; color: var(--text-sec); background: transparent;
+    border: none; cursor: pointer; border-radius: 6px; transition: all 0.25s;
+    text-transform: uppercase;
+  }
+  .dim-switch button.active {
+    background: linear-gradient(180deg, rgba(0,229,255,0.18), rgba(0,229,255,0.06));
+    color: var(--cyan); box-shadow: 0 0 12px rgba(0,229,255,0.3), inset 0 0 8px rgba(0,229,255,0.1);
+  }
+  .dim-switch button:hover:not(.active) { color: var(--text-pri); }
+
+  /* ============ Bento 主网格 - 不对称布局 ============ */
+  .bento {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-auto-rows: 80px;
+    gap: 14px;
+  }
+
+  /* 通用面板 */
+  .panel {
+    background: linear-gradient(160deg, rgba(19,28,48,0.7), rgba(10,15,28,0.85));
+    border: 1px solid var(--border-line);
+    border-radius: 12px; position: relative; overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .panel:hover { border-color: var(--border-strong); }
+  .panel::before {
+    content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border-strong) 30%, var(--border-strong) 70%, transparent);
+  }
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 18px;
+  }
+  .panel-title { display: flex; align-items: center; gap: 11px; font-size: 14.5px; letter-spacing: 0.05em; font-weight: 500; }
+  .panel-title-bar { width: 3px; height: 15px; background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+  .panel-tag { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text-sec); letter-spacing: 0.12em; }
+  .panel-body { padding: 14px 18px; }
+
+  /* ============ HERO 区 ============ */
+  .hero {
+    grid-column: span 7; grid-row: span 4;
+    padding: 22px 26px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    background:
+      radial-gradient(ellipse 60% 80% at 100% 0%, rgba(0,229,255,0.12), transparent 60%),
+      radial-gradient(ellipse 50% 60% at 0% 100%, rgba(139,92,246,0.08), transparent 60%),
+      linear-gradient(160deg, rgba(19,28,48,0.85), rgba(10,15,28,0.9));
+  }
+  .hero-head { display: flex; justify-content: space-between; align-items: flex-start; }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: 'Space Mono', monospace; font-size: 13px;
+    letter-spacing: 0.2em; color: var(--cyan); text-transform: uppercase;
+  }
+  .hero-eyebrow::before {
+    content: ''; width: 28px; height: 1px; background: var(--cyan); box-shadow: 0 0 6px var(--cyan);
+  }
+  .hero-period {
+    font-family: 'Space Mono', monospace; font-size: 13px;
+    color: var(--text-sec); padding: 5px 12px;
+    border: 1px solid var(--border-line); border-radius: 999px;
+  }
+  .hero-main { display: flex; align-items: flex-end; gap: 28px; margin: -8px 0; }
+  .hero-number-wrap { display: flex; flex-direction: column; }
+  .hero-number {
+    font-family: 'Space Mono', monospace; font-weight: 700;
+    font-size: 96px; line-height: 0.95;
+    background: linear-gradient(180deg, #FFFFFF 0%, #00E5FF 80%, #00B8D4 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.04em; font-variant-numeric: tabular-nums;
+    filter: drop-shadow(0 0 18px rgba(0,229,255,0.4));
+  }
+  .hero-unit {
+    font-family: 'Space Mono', monospace; font-size: 26px;
+    color: var(--text-sec); margin-left: 6px; font-weight: 400;
+  }
+  .hero-label {
+    font-size: 15px; color: var(--text-sec); margin-top: 8px;
+    letter-spacing: 0.08em;
+  }
+  .hero-trend-mini {
+    flex: 1; height: 80px; min-width: 220px;
+  }
+  .hero-foot {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+    border-top: 1px solid var(--border-line); padding-top: 16px; margin-top: 8px;
+  }
+  .hero-stat {
+    padding: 0 18px; border-right: 1px solid var(--border-line);
+  }
+  .hero-stat:first-child { padding-left: 0; }
+  .hero-stat:last-child { border-right: none; padding-right: 0; }
+  .hero-stat-label { font-size: 12px; color: var(--text-sec); letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 6px; }
+  .hero-stat-val { font-family: 'Space Mono', monospace; font-size: 24px; color: var(--text-pri); font-weight: 700; }
+  .hero-stat-val .u { font-size: 13px; color: var(--text-sec); font-weight: 400; margin-left: 3px; }
+  .hero-stat-delta { font-family: 'Space Mono', monospace; font-size: 12px; margin-top: 4px; }
+  .delta-up { color: var(--lime); }
+  .delta-down { color: var(--rose); }
+
+  /* ============ 能效环（大圆形仪表） ============ */
+  .efficiency {
+    grid-column: span 3; grid-row: span 4;
+    display: flex; flex-direction: column;
+    background:
+      radial-gradient(circle at 50% 40%, rgba(182,255,61,0.08), transparent 60%),
+      linear-gradient(160deg, rgba(19,28,48,0.7), rgba(10,15,28,0.85));
+  }
+  .efficiency-head {
+    padding: 15px 18px 0;
+  }
+  .efficiency-title {
+    display: flex; align-items: center; gap: 9px;
+    font-size: 14px; letter-spacing: 0.06em; color: var(--text-pri);
+  }
+  .efficiency-title-bar { width: 3px; height: 14px; background: var(--lime); box-shadow: 0 0 6px var(--lime); }
+  .efficiency-sub { font-size: 11.5px; color: var(--text-sec); margin-top: 5px; letter-spacing: 0.12em; }
+  .efficiency-ring {
+    flex: 1; min-height: 0;
+    display: grid; place-items: center;
+    position: relative;
+  }
+  .efficiency-ring-chart { width: 100%; height: 100%; min-height: 180px; }
+  .efficiency-center {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    text-align: center; pointer-events: none;
+  }
+  .efficiency-val {
+    font-family: 'Space Mono', monospace; font-size: 52px; font-weight: 700;
+    color: var(--lime); line-height: 1; letter-spacing: -0.02em;
+    filter: drop-shadow(0 0 10px rgba(182,255,61,0.5));
+  }
+  .efficiency-unit { font-size: 13px; color: var(--text-sec); margin-top: 6px; font-family: 'Space Mono', monospace; letter-spacing: 0.06em; }
+  .efficiency-foot {
+    padding: 0 18px 16px; display: flex; justify-content: space-between;
+    font-family: 'Space Mono', monospace; font-size: 12.5px;
+  }
+  .efficiency-foot span { color: var(--text-sec); }
+  .efficiency-foot b { color: var(--text-pri); font-weight: 700; }
+
+  /* ============ 车队状态条 ============ */
+  .fleet-status {
+    grid-column: span 2; grid-row: span 2;
+    padding: 15px; display: flex; flex-direction: column; justify-content: space-between;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(255,181,70,0.1), transparent 60%),
+      linear-gradient(160deg, rgba(19,28,48,0.7), rgba(10,15,28,0.85));
+  }
+  .fleet-status-head { display: flex; align-items: center; justify-content: space-between; }
+  .fleet-status-label { font-size: 12px; color: var(--text-sec); letter-spacing: 0.14em; text-transform: uppercase; }
+  .fleet-status-big { font-family: 'Space Mono', monospace; font-size: 46px; font-weight: 700; color: var(--lime); line-height: 1; filter: drop-shadow(0 0 10px rgba(182,255,61,0.4)); }
+  .fleet-status-big .total { font-size: 18px; color: var(--text-sec); }
+  .fleet-status-bar { display: flex; height: 6px; gap: 2px; border-radius: 3px; overflow: hidden; }
+  .fleet-status-bar > div { flex: 1; }
+  .fleet-status-legend { display: flex; justify-content: space-between; font-family: 'Space Mono', monospace; font-size: 11.5px; }
+  .fleet-status-legend span { display: flex; align-items: center; gap: 5px; color: var(--text-sec); }
+  .fleet-status-legend i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+
+  /* ============ 安全事件紧凑块 ============ */
+  .safety-block {
+    grid-column: span 2; grid-row: span 2;
+    padding: 15px; display: flex; gap: 14px; align-items: stretch;
+    background:
+      radial-gradient(circle at 0% 100%, rgba(255,84,112,0.1), transparent 60%),
+      linear-gradient(160deg, rgba(19,28,48,0.7), rgba(10,15,28,0.85));
+  }
+  .safety-cell { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+  .safety-cell-label { font-size: 12px; color: var(--text-sec); letter-spacing: 0.14em; text-transform: uppercase; }
+  .safety-cell-val { font-family: 'Space Mono', monospace; font-size: 40px; font-weight: 700; line-height: 1; }
+  .safety-cell-val.alert { color: var(--rose); filter: drop-shadow(0 0 10px rgba(255,84,112,0.4)); }
+  .safety-cell-val.takeover { color: var(--teal); filter: drop-shadow(0 0 10px rgba(46,230,197,0.4)); }
+  .safety-cell-trend { font-family: 'Space Mono', monospace; font-size: 12px; }
+
+  /* ============ 作业节奏大图（宽） ============ */
+  .rhythm {
+    grid-column: span 8; grid-row: span 4;
+  }
+  .rhythm .panel-body { padding: 10px 14px 14px; }
+  .rhythm-chart { width: 100%; height: 280px; }
+
+  /* ============ 任务画像雷达 ============ */
+  .radar-panel {
+    grid-column: span 4; grid-row: span 4;
+  }
+  .radar-chart { width: 100%; height: 280px; }
+
+  /* ============ 资源节奏（横向时间条） ============ */
+  .resource-rhythm {
+    grid-column: span 7; grid-row: span 4;
+  }
+  .resource-track {
+    margin-bottom: 12px;
+  }
+  .resource-track:last-child { margin-bottom: 0; }
+  .resource-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px; }
+  .resource-meta .name { color: var(--text-pri); display: flex; align-items: center; gap: 7px; font-weight: 500; }
+  .resource-meta .name i { width: 8px; height: 8px; border-radius: 50%; }
+  .resource-meta .count { font-family: 'Space Mono', monospace; color: var(--text-sec); font-size: 12.5px; }
+  .resource-meta .count b { color: var(--text-pri); font-weight: 700; }
+  .resource-timeline {
+    height: 30px; background: rgba(82,196,255,0.04);
+    border-radius: 4px; position: relative; overflow: hidden;
+    border: 1px solid rgba(82,196,255,0.06);
+  }
+  .resource-tick {
+    position: absolute; top: 3px; bottom: 3px; width: 3px;
+    border-radius: 1px; background: var(--c, var(--cyan));
+    box-shadow: 0 0 6px var(--c, var(--cyan));
+    transition: opacity 0.3s;
+  }
+  .resource-timeline::before, .resource-timeline::after {
+    content: ''; position: absolute; top: 0; bottom: 0; width: 1px;
+    background: rgba(82,196,255,0.1);
+  }
+  .resource-timeline::before { left: 25%; }
+  .resource-timeline::after { left: 75%; }
+  .resource-axis {
+    display: flex; justify-content: space-between;
+    font-family: 'Space Mono', monospace; font-size: 11px;
+    color: var(--text-sec); margin-top: 5px;
+  }
+  .resource-insights {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-line);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .ri-item { display: flex; flex-direction: column; gap: 5px; }
+  .ri-label { font-size: 11.5px; color: var(--text-sec); letter-spacing: 0.1em; }
+  .ri-val { font-family: 'Space Mono', monospace; font-size: 17px; color: var(--text-pri); font-weight: 700; }
+  .ri-val span { font-size: 11px; color: var(--text-sec); font-weight: 400; margin-left: 2px; }
+
+  /* ============ 事件流 ============ */
+  .events {
+    grid-column: span 5; grid-row: span 4;
+  }
+  .event-list {
+    max-height: 280px; overflow-y: auto; padding-right: 6px;
+  }
+  .event-list::-webkit-scrollbar { width: 4px; }
+  .event-list::-webkit-scrollbar-track { background: transparent; }
+  .event-list::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+  .event-row {
+    display: flex; gap: 11px; padding: 9px 0;
+    border-bottom: 1px dashed rgba(82,196,255,0.08);
+    animation: slide-in 0.4s ease-out;
+  }
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .event-time {
+    font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text-sec);
+    min-width: 60px; padding-top: 3px;
+  }
+  .event-icon {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: grid; place-items: center; flex-shrink: 0;
+    border: 1px solid var(--ec, var(--cyan));
+    background: color-mix(in srgb, var(--ec, var(--cyan)) 12%, transparent);
+    color: var(--ec, var(--cyan)); font-size: 12px;
+  }
+  .event-body { flex: 1; min-width: 0; }
+  .event-title { font-size: 13.5px; color: var(--text-pri); margin-bottom: 3px; font-weight: 500; }
+  .event-meta { font-family: 'Space Mono', monospace; font-size: 11.5px; color: var(--text-sec); }
+
+  /* ============ 车队卡片 ============ */
+  .fleet-strip-panel {
+    grid-column: span 12; grid-row: span 3;
+  }
+  .fleet-strip {
+    display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px;
+  }
+  .fleet-card {
+    flex-shrink: 0; width: 140px; padding: 14px 14px;
+    background: rgba(10,15,28,0.5); border: 1px solid var(--border-line);
+    border-radius: 8px; position: relative; transition: transform 0.2s, border-color 0.2s;
+  }
+  .fleet-card:hover { transform: translateY(-2px); border-color: var(--border-strong); }
+  .fleet-card.online { border-color: rgba(182,255,61,0.25); }
+  .fleet-card.alert { border-color: rgba(255,84,112,0.4); }
+  .fleet-card.idle { opacity: 0.75; }
+  .fleet-card.offline { opacity: 0.55; }
+  .fleet-id { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text-sec); letter-spacing: 0.1em; }
+  .fleet-name { font-size: 14px; color: var(--text-pri); margin-top: 4px; font-weight: 500; }
+  .fleet-stat { display: flex; justify-content: space-between; margin-top: 9px; font-family: 'Space Mono', monospace; font-size: 12px; }
+  .fleet-stat span:first-child { color: var(--text-sec); }
+  .fleet-stat .v { color: var(--cyan); font-weight: 600; }
+  .fleet-status-pill { position: absolute; top: 14px; right: 14px; width: 8px; height: 8px; border-radius: 50%; }
+  .fleet-status-pill.online { background: var(--lime); box-shadow: 0 0 6px var(--lime); }
+  .fleet-status-pill.alert { background: var(--rose); box-shadow: 0 0 6px var(--rose); animation: blink 1s infinite; }
+  .fleet-status-pill.idle { background: var(--amber); }
+  .fleet-status-pill.offline { background: var(--text-mute); }
+
+  /* 角标装饰 */
+  .corner { position: absolute; width: 9px; height: 9px; border: 1px solid var(--cyan); opacity: 0.45; pointer-events: none; }
+  .corner.tl { top: 5px; left: 5px; border-right: none; border-bottom: none; }
+  .corner.tr { top: 5px; right: 5px; border-left: none; border-bottom: none; }
+  .corner.bl { bottom: 5px; left: 5px; border-right: none; border-top: none; }
+  .corner.br { bottom: 5px; right: 5px; border-left: none; border-top: none; }
+
+  /* 扫描线 */
+  .scanline {
+    position: absolute; left: 0; right: 0; height: 50px;
+    background: linear-gradient(180deg, transparent, rgba(0,229,255,0.05), transparent);
+    pointer-events: none; animation: scan 9s linear infinite;
+  }
+  @keyframes scan { 0% { top: -50px; } 100% { top: 100%; } }
+
+  .reveal { animation: reveal-up 0.6s ease-out backwards; }
+  @keyframes reveal-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* 响应式：折叠为单列 */
+  @media (max-width: 1280px) {
+    .hero { grid-column: span 12; grid-row: span 4; }
+    .efficiency { grid-column: span 6; grid-row: span 3; }
+    .fleet-status { grid-column: span 6; grid-row: span 2; }
+    .safety-block { grid-column: span 6; grid-row: span 2; }
+    .rhythm { grid-column: span 12; }
+    .radar-panel { grid-column: span 12; }
+    .resource-rhythm { grid-column: span 12; }
+    .events { grid-column: span 12; }
+  }
+  @media (max-width: 768px) {
+    .hero-number { font-size: 60px; }
+    .status-cluster { display: none; }
+    .bento { grid-template-columns: 1fr; }
+    .bento > * { grid-column: span 1 !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ====================== 顶栏 ====================== -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2 L4 7 V17 L12 22 L20 17 V7 Z"/>
+          <path d="M12 6 L8 8.5 V13.5 L12 16 L16 13.5 V8.5 Z"/>
+          <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-title">SWEEP-OPS</div>
+        <div class="brand-sub">无人清扫车 · 运营驾驶舱 / v3.2</div>
+      </div>
+    </div>
+
+    <div class="status-cluster">
+      <div class="status-item">
+        <span class="status-label">SYSTEM TIME</span>
+        <span class="status-val" id="clock">--:--:--</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">DATA LATENCY</span>
+        <span class="status-val" style="color:var(--cyan)">42 ms</span>
+      </div>
+      <span class="live-dot">LIVE TELEMETRY</span>
+    </div>
+
+    <div class="dim-switch" id="dimSwitch">
+      <button data-dim="day" class="active">当天</button>
+      <button data-dim="total">累计</button>
+    </div>
+  </header>
+
+  <!-- ====================== Bento 主网格 ====================== -->
+  <div class="bento" id="bento">
+
+    <!-- HERO: 今日清扫里程 -->
+    <div class="panel hero reveal" style="animation-delay:0s">
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+      <div class="hero-head">
+        <span class="hero-eyebrow">CORE OUTPUT · 核心产出</span>
+        <span class="hero-period" id="heroPeriod">今日 · 2026-06-16</span>
+      </div>
+
+      <div class="hero-main">
+        <div class="hero-number-wrap">
+          <div>
+            <span class="hero-number" id="heroNum">0</span><span class="hero-unit">km</span>
+          </div>
+          <div class="hero-label">累计清扫里程 / Sweep Distance</div>
+        </div>
+        <div class="hero-trend-mini" id="heroTrend"></div>
+      </div>
+
+      <div class="hero-foot">
+        <div class="hero-stat">
+          <div class="hero-stat-label">清扫时长</div>
+          <div class="hero-stat-val"><span id="hs1">0</span><span class="u">h</span></div>
+          <div class="hero-stat-delta delta-up" id="hd1">▲ +11%</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-label">平均速度</div>
+          <div class="hero-stat-val"><span id="hs2">0</span><span class="u">km/h</span></div>
+          <div class="hero-stat-delta delta-up" id="hd2">▲ +6%</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-label">自驾 : 清扫</div>
+          <div class="hero-stat-val"><span id="hs3">0</span></div>
+          <div class="hero-stat-delta" style="color:var(--text-sec)" id="hd3">作业占比 74%</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-label" id="hs4Label">vs 昨日同时段</div>
+          <div class="hero-stat-val delta-up" id="hs4">+13%</div>
+          <div class="hero-stat-delta" style="color:var(--text-sec)" id="hd4">截至 14:32 · +9.0 km</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 能效核心 - 大圆环 -->
+    <div class="panel efficiency reveal" style="animation-delay:0.08s">
+      <span class="corner tl"></span><span class="corner br"></span>
+      <div class="efficiency-head">
+        <div class="efficiency-title">
+          <span class="efficiency-title-bar"></span>
+          综合能效
+        </div>
+        <div class="efficiency-sub">KM / KWH · ENERGY EFFICIENCY</div>
+      </div>
+      <div class="efficiency-ring">
+        <div id="effRing" class="efficiency-ring-chart"></div>
+        <div class="efficiency-center">
+          <div class="efficiency-val" id="effVal">0</div>
+          <div class="efficiency-unit">km / kWh</div>
+        </div>
+      </div>
+      <div class="efficiency-foot">
+        <span>总耗电 <b id="effPower">0</b> kWh</span>
+        <span>自驾占比 <b id="effRatio">0</b>%</span>
+      </div>
+    </div>
+
+    <!-- 车队状态条 -->
+    <div class="panel fleet-status reveal" style="animation-delay:0.12s">
+      <span class="corner tl"></span>
+      <div class="fleet-status-head">
+        <span class="fleet-status-label">FLEET</span>
+        <span class="num" style="font-size:10px;color:var(--text-sec)">在线率</span>
+      </div>
+      <div>
+        <span class="fleet-status-big" id="fleetOnline">0<span class="total">/14</span></span>
+      </div>
+      <div class="fleet-status-bar">
+        <div style="background:var(--lime);flex:13"></div>
+        <div style="background:var(--text-mute);flex:1"></div>
+      </div>
+      <div class="fleet-status-legend">
+        <span><i style="background:var(--lime)"></i>在线</span>
+        <span><i style="background:var(--text-mute)"></i>离线</span>
+      </div>
+    </div>
+
+    <!-- 安全事件紧凑块 -->
+    <div class="panel safety-block reveal" style="animation-delay:0.16s">
+      <span class="corner tr"></span>
+      <div class="safety-cell">
+        <div class="safety-cell-label">告警</div>
+        <div class="safety-cell-val alert" id="safetyAlert">0</div>
+        <div class="safety-cell-trend delta-down">▲ +2 vs 昨</div>
+      </div>
+      <div style="width:1px;background:var(--border-line)"></div>
+      <div class="safety-cell">
+        <div class="safety-cell-label">接管</div>
+        <div class="safety-cell-val takeover" id="safetyTakeover">0</div>
+        <div class="safety-cell-trend delta-up">▼ -1 vs 昨</div>
+      </div>
+    </div>
+
+    <!-- 作业节奏 24h 大图 -->
+    <div class="panel rhythm reveal" style="animation-delay:0.2s">
+      <div class="scanline"></div>
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+      <div class="panel-head">
+        <div class="panel-title">
+          <span class="panel-title-bar"></span>
+          24h 作业节奏 · 自驾 vs 清扫
+        </div>
+        <div class="flex items-center gap-3 flex-wrap justify-end">
+          <span class="panel-tag flex items-center gap-1.5">
+            <span style="width:10px;height:2px;background:var(--cyan);box-shadow:0 0 4px var(--cyan)"></span>今日自驾
+          </span>
+          <span class="panel-tag flex items-center gap-1.5" data-legend="yesterdayDrive">
+            <span style="display:inline-block;width:12px;height:0;border-top:1.5px dashed rgba(0,229,255,0.7)"></span>昨日自驾
+          </span>
+          <span class="panel-tag flex items-center gap-1.5">
+            <span style="width:10px;height:2px;background:var(--violet);box-shadow:0 0 4px var(--violet)"></span>今日清扫
+          </span>
+          <span class="panel-tag flex items-center gap-1.5" data-legend="yesterdaySweep">
+            <span style="display:inline-block;width:12px;height:0;border-top:1.5px dashed rgba(139,92,246,0.7)"></span>昨日清扫
+          </span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div id="rhythmChart" class="rhythm-chart"></div>
+      </div>
+    </div>
+
+    <!-- 任务画像雷达 -->
+    <div class="panel radar-panel reveal" style="animation-delay:0.24s">
+      <span class="corner tl"></span><span class="corner br"></span>
+      <div class="panel-head">
+        <div class="panel-title">
+          <span class="panel-title-bar" style="background:var(--amber);box-shadow:0 0 6px var(--amber)"></span>
+          任务画像
+        </div>
+        <span class="panel-tag" id="radarTag">综合评分 81</span>
+      </div>
+      <div class="panel-body">
+        <div id="radarChart" class="radar-chart"></div>
+      </div>
+    </div>
+
+    <!-- 资源补给节奏 -->
+    <div class="panel resource-rhythm reveal" style="animation-delay:0.28s">
+      <span class="corner tl"></span><span class="corner br"></span>
+      <div class="panel-head">
+        <div class="panel-title">
+          <span class="panel-title-bar" style="background:var(--violet);box-shadow:0 0 6px var(--violet)"></span>
+          资源补给节奏 · 24h 分布
+        </div>
+        <span class="panel-tag">点击条目高亮</span>
+      </div>
+      <div class="panel-body" style="padding-top:8px">
+        <div class="resource-track">
+          <div class="resource-meta">
+            <span class="name"><i style="background:var(--lime);box-shadow:0 0 4px var(--lime)"></i>充电</span>
+            <span class="count"><b id="rcCharge">23</b> 次 · 累计 <b id="rkCharge">0</b> kWh</span>
+          </div>
+          <div class="resource-timeline" id="tlCharge"></div>
+        </div>
+        <div class="resource-track">
+          <div class="resource-meta">
+            <span class="name"><i style="background:#4FC3F7;box-shadow:0 0 4px #4FC3F7"></i>加水</span>
+            <span class="count"><b id="rcWater">31</b> 次 · 累计 <b id="rkWater">0</b> L</span>
+          </div>
+          <div class="resource-timeline" id="tlWater"></div>
+        </div>
+        <div class="resource-track">
+          <div class="resource-meta">
+            <span class="name"><i style="background:var(--violet);box-shadow:0 0 4px var(--violet)"></i>倒垃圾</span>
+            <span class="count"><b id="rcTrash">14</b> 次 · 容量恢复 <b id="rkTrash">0</b>%</span>
+          </div>
+          <div class="resource-timeline" id="tlTrash"></div>
+        </div>
+        <div class="resource-axis">
+          <span>00</span><span>06</span><span>12</span><span>18</span><span>24</span>
+        </div>
+
+        <div class="resource-insights">
+          <div class="ri-item">
+            <div class="ri-label">高峰补给时段</div>
+            <div class="ri-val">08:00 — 10:00</div>
+          </div>
+          <div class="ri-item">
+            <div class="ri-label">平均补给间隔</div>
+            <div class="ri-val">47<span>min</span></div>
+          </div>
+          <div class="ri-item">
+            <div class="ri-label">节奏效率</div>
+            <div class="ri-val" style="color:var(--lime)">A</div>
+          </div>
+          <div class="ri-item">
+            <div class="ri-label">异常聚集</div>
+            <div class="ri-val" style="color:var(--amber)">2<span>处</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 事件流 -->
+    <div class="panel events reveal" style="animation-delay:0.32s">
+      <span class="corner tl"></span><span class="corner br"></span>
+      <div class="panel-head">
+        <div class="panel-title">
+          <span class="panel-title-bar" style="background:var(--rose);box-shadow:0 0 6px var(--rose)"></span>
+          实时事件流
+        </div>
+        <span class="panel-tag">最近 24h</span>
+      </div>
+      <div class="panel-body">
+        <div class="event-list" id="eventList"></div>
+      </div>
+    </div>
+
+    <!-- 车队卡片 -->
+    <div class="panel fleet-strip-panel reveal" style="animation-delay:0.36s">
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+      <div class="panel-head">
+        <div class="panel-title">
+          <span class="panel-title-bar" style="background:var(--amber);box-shadow:0 0 6px var(--amber)"></span>
+          车队实时状态
+        </div>
+        <span class="panel-tag">14 台 · 在线 13 · 离线 1</span>
+      </div>
+      <div class="panel-body" style="padding-top:6px">
+        <div class="fleet-strip" id="fleetStrip"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   数据集
+   ============================================================ */
+const DATASET = {
+  day: {
+    periodLabel: '今日 · 2026-06-16 · 截至 14:32',
+    currentTime: '14:32',
+    hero: {
+      sweepDist: 76.1, sweepTime: 5.4, avgSpeed: 5.2,
+      driveRatio: '1.48 : 1', workShare: 74,
+      vsYesterdayPct: '+13%',
+      vsYesterdayAbs: '+9.0 km',
+      vsYesterdayTime: '14:32',
+      vsYesterdayLabel: 'vs 昨日同时段'
+    },
+    efficiency: { kmPerKwh: 3.2, totalPower: 612.4, driveShare: 36.9, score: 81 },
+    fleet: { online: 13, offline: 1, total: 14 },
+    safety: { alert: 7, takeover: 3 },
+    trend: {
+      hours: ['00','02','04','06','08','10','12','14','16','18','20','22'],
+      drive: [3.2, 2.8, 4.4, 12.1, 18.6, 22.4, 19.8, 16.2, null, null, null, null],
+      sweep: [2.1, 1.8, 3.2, 9.8, 14.2, 17.5, 15.1, 12.4, null, null, null, null],
+      yesterdayDrive: [2.8, 2.4, 3.8, 10.5, 16.2, 19.8, 17.5, 14.2, 15.5, 12.8, 7.2, 2.4],
+      yesterdaySweep: [1.8, 1.6, 2.8, 8.2, 12.8, 15.5, 13.4, 11.0, 12.8, 10.5, 5.8, 1.2]
+    },
+    radar: [82, 76, 88, 71, 90, 79],
+    resources: {
+      charge: { count: 23, total: 1842, marks: [8,15,22,29,36,42,48,55,61,67,72,78,83,88,92,96,12,18,25,33,45,58,71] },
+      water:  { count: 31, total: 2148, marks: [10,18,26,33,40,46,52,58,64,70,76,82,87,92,14,22,30,38,44,50,56,63,69,75,81,86,20,35,55,80,90] },
+      trash:  { count: 14, total: 88, marks: [12,28,42,55,68,78,86,18,38,58,72,82,32,62] }
+    }
+  },
+  total: {
+    periodLabel: '累计 · 全生命周期',
+    hero: {
+      sweepDist: 32408, sweepTime: 2286, avgSpeed: 5.4,
+      driveRatio: '1.49 : 1', workShare: 74,
+      vsYesterdayPct: '+0.3%',
+      vsYesterdayAbs: '+96.4 km',
+      vsYesterdayTime: null,
+      vsYesterdayLabel: '近一日增量'
+    },
+    efficiency: { kmPerKph: 3.4, totalPower: 286540, driveShare: 36.9, score: 86 },
+    fleet: { online: 13, offline: 1, total: 14 },
+    safety: { alert: 1284, takeover: 426 },
+    trend: {
+      hours: ['1月','2月','3月','4月','5月','6月'],
+      drive: [6420, 7180, 8024, 7860, 9120, 9612],
+      sweep: [4280, 5060, 5840, 5520, 6480, 5228],
+      yesterdaySweep: null
+    },
+    radar: [88, 81, 92, 75, 94, 83],
+    resources: {
+      charge: { count: 8421, total: 0, marks: [] },
+      water:  { count: 11248, total: 0, marks: [] },
+      trash:  { count: 5186, total: 0, marks: [] }
+    }
+  }
+};
+
+/* ============================================================
+   工具
+   ============================================================ */
+function fmt(n) {
+  if (n >= 10000) return n.toLocaleString('en-US');
+  if (Number.isInteger(n)) return String(n);
+  return n.toFixed(1);
+}
+function animateNum(el, target, dur = 900, decimals = null) {
+  const isInt = Number.isInteger(target) || (decimals === 0);
+  const start = performance.now();
+  function step(now) {
+    const p = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - p, 3);
+    const v = target * eased;
+    el.textContent = isInt ? Math.round(v).toLocaleString('en-US') : v.toFixed(decimals ?? 1);
+    if (p < 1) requestAnimationFrame(step);
+    else el.textContent = isInt ? target.toLocaleString('en-US') : (decimals !== null ? target.toFixed(decimals) : fmt(target));
+  }
+  requestAnimationFrame(step);
+}
+
+/* ============================================================
+   ECharts 实例
+   ============================================================ */
+let rhythmChart, radarChart, heroTrendChart, effRingChart;
+
+const axisLineClr = 'rgba(82,196,255,0.18)';
+const splitLineClr = 'rgba(82,196,255,0.07)';
+const textColor = '#B0C0DC';
+
+/* HERO 微趋势 */
+function renderHeroTrend(dim) {
+  const d = DATASET[dim].trend;
+  if (heroTrendChart) heroTrendChart.dispose();
+  heroTrendChart = echarts.init(document.getElementById('heroTrend'));
+  heroTrendChart.setOption({
+    backgroundColor: 'transparent',
+    grid: { left: 0, right: 0, top: 5, bottom: 0 },
+    xAxis: { type: 'category', show: false, boundaryGap: false, data: d.hours },
+    yAxis: { type: 'value', show: false, min: 0 },
+    series: [{
+      type: 'line', smooth: true, symbol: 'none',
+      data: d.sweep,
+      lineStyle: { width: 2, color: '#00E5FF', shadowColor: '#00E5FF', shadowBlur: 8 },
+      areaStyle: {
+        color: { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops:[
+          {offset:0,color:'rgba(0,229,255,0.4)'}, {offset:1,color:'rgba(0,229,255,0)'}
+        ]}
+      }
+    }]
+  });
+}
+
+/* 作业节奏大图 */
+function renderRhythm(dim) {
+  const d = DATASET[dim].trend;
+  const hasYesterday = !!d.yesterdaySweep;
+  const series = [];
+
+  // 昨日虚线参照（颜色与今日同指标一致，仅透明度降低 + 虚线）
+  if (hasYesterday) {
+    series.push({
+      name: '昨日自驾', type: 'line', smooth: true, symbol: 'none',
+      data: d.yesterdayDrive,
+      lineStyle: { width: 1.5, color: 'rgba(0,229,255,0.45)', type: 'dashed' },
+      z: 1
+    });
+    series.push({
+      name: '昨日清扫', type: 'line', smooth: true, symbol: 'none',
+      data: d.yesterdaySweep,
+      lineStyle: { width: 1.5, color: 'rgba(139,92,246,0.5)', type: 'dashed' },
+      z: 1
+    });
+  }
+  // 今日自驾
+  series.push({
+    name: '今日自驾', type: 'line', smooth: true, symbol: 'circle', symbolSize: 5,
+    data: d.drive,
+    lineStyle: { width: 2.5, color: '#00E5FF', shadowColor: '#00E5FF', shadowBlur: 12 },
+    itemStyle: { color: '#00E5FF', borderColor: '#0A0F1C', borderWidth: 2 },
+    areaStyle: {
+      color: { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops:[
+        {offset:0,color:'rgba(0,229,255,0.35)'}, {offset:1,color:'rgba(0,229,255,0)'}
+      ]}
+    },
+    z: 3
+  });
+  // 今日清扫
+  series.push({
+    name: '今日清扫', type: 'line', smooth: true, symbol: 'circle', symbolSize: 5,
+    data: d.sweep,
+    lineStyle: { width: 2.5, color: '#8B5CF6', shadowColor: '#8B5CF6', shadowBlur: 12 },
+    itemStyle: { color: '#8B5CF6', borderColor: '#0A0F1C', borderWidth: 2 },
+    areaStyle: {
+      color: { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops:[
+        {offset:0,color:'rgba(139,92,246,0.3)'}, {offset:1,color:'rgba(139,92,246,0)'}
+      ]}
+    },
+    z: 3
+  });
+
+  rhythmChart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(10,15,28,0.96)',
+      borderColor: 'rgba(82,196,255,0.35)', borderWidth: 1,
+      textStyle: { color: '#E8F4FF', fontFamily: 'Space Mono', fontSize: 13 },
+      axisPointer: { lineStyle: { color: 'rgba(0,229,255,0.4)', type: 'dashed' } }
+    },
+    legend: { show: false },
+    grid: { left: 44, right: 22, top: 22, bottom: 32 },
+    xAxis: {
+      type: 'category', data: d.hours, boundaryGap: false,
+      axisLine: { lineStyle: { color: axisLineClr } },
+      axisTick: { show: false },
+      axisLabel: { color: textColor, fontFamily: 'Space Mono', fontSize: 12.5 }
+    },
+    yAxis: {
+      type: 'value',
+      axisLine: { show: false }, axisTick: { show: false },
+      splitLine: { lineStyle: { color: splitLineClr } },
+      axisLabel: { color: textColor, fontFamily: 'Space Mono', fontSize: 12 }
+    },
+    series: series
+  });
+
+  // 同步昨日图例显隐
+  document.querySelectorAll('[data-legend]').forEach(el => {
+    el.style.display = hasYesterday ? '' : 'none';
+  });
+}
+
+/* 雷达 */
+function renderRadar(dim) {
+  const vals = DATASET[dim].radar;
+  radarChart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: {
+      backgroundColor: 'rgba(10,15,28,0.96)',
+      borderColor: 'rgba(82,196,255,0.35)',
+      textStyle: { color: '#E8F4FF', fontFamily: 'Space Mono', fontSize: 13 }
+    },
+    radar: {
+      indicator: [
+        { name: '效率', max: 100 },
+        { name: '安全', max: 100 },
+        { name: '速度', max: 100 },
+        { name: '能效', max: 100 },
+        { name: '稳定', max: 100 },
+        { name: '响应', max: 100 }
+      ],
+      center: ['50%', '54%'], radius: '64%', shape: 'polygon',
+      axisName: { color: '#B0C0DC', fontSize: 13, fontWeight: 500 },
+      splitLine: { lineStyle: { color: 'rgba(82,196,255,0.14)' } },
+      splitArea: { areaStyle: { color: ['rgba(0,229,255,0.02)','rgba(0,229,255,0.05)','rgba(0,229,255,0.02)','rgba(0,229,255,0.05)'] } },
+      axisLine: { lineStyle: { color: 'rgba(82,196,255,0.18)' } }
+    },
+    series: [{
+      type: 'radar',
+      data: [{
+        value: vals, symbol: 'circle', symbolSize: 6,
+        lineStyle: { color: '#FFB546', width: 2, shadowColor: '#FFB546', shadowBlur: 10 },
+        itemStyle: { color: '#FFB546', borderColor: '#0A0F1C', borderWidth: 2 },
+        areaStyle: { color: 'rgba(255,181,70,0.25)' }
+      }]
+    }]
+  });
+  document.getElementById('radarTag').textContent = `综合评分 ${Math.round(vals.reduce((a,b)=>a+b,0)/vals.length)}`;
+}
+
+/* 能效大环 */
+function renderEffRing(dim) {
+  const e = DATASET[dim].efficiency;
+  const pct = Math.min(100, (e.kmPerKwh / 5) * 100); // 5 km/kWh 满分
+  if (effRingChart) effRingChart.dispose();
+  effRingChart = echarts.init(document.getElementById('effRing'));
+  effRingChart.setOption({
+    backgroundColor: 'transparent',
+    series: [{
+      type: 'gauge',
+      startAngle: 220, endAngle: -40,
+      radius: '88%', center: ['50%', '50%'],
+      pointer: { show: false },
+      progress: {
+        show: true, overlap: false, roundCap: true, clip: false,
+        itemStyle: {
+          color: { type: 'linear', x:0,y:0,x2:1,y2:0, colorStops:[
+            {offset:0,color:'#B6FF3D'}, {offset:1,color:'#2EE6C5'}
+          ]},
+          shadowColor: '#B6FF3D', shadowBlur: 14
+        }
+      },
+      axisLine: { lineStyle: { width: 10, color: [[1, 'rgba(82,196,255,0.08)']] } },
+      splitLine: { show: false }, axisTick: { show: false }, axisLabel: { show: false },
+      data: [{ value: pct }]
+    }]
+  });
+  document.getElementById('effVal').textContent = e.kmPerKwh.toFixed(1);
+  document.getElementById('effPower').textContent = fmt(e.totalPower);
+  document.getElementById('effRatio').textContent = e.driveShare.toFixed(1);
+}
+
+/* 资源节奏时间条 */
+function renderResourceTracks(dim) {
+  const r = DATASET[dim].resources;
+  const cfg = [
+    { key: 'charge', id: 'tlCharge', color: 'var(--lime)',  markColor: '#B6FF3D' },
+    { key: 'water',  id: 'tlWater',  color: '#4FC3F7',      markColor: '#4FC3F7' },
+    { key: 'trash',  id: 'tlTrash',  color: 'var(--violet)', markColor: '#8B5CF6' }
+  ];
+  cfg.forEach(c => {
+    const data = r[c.key];
+    const el = document.getElementById(c.id);
+    el.style.setProperty('--c', c.markColor);
+    el.innerHTML = data.marks.map(pos => {
+      // pos 是 0-100 的百分比
+      return `<div class="resource-tick" style="left:${pos}%;--c:${c.markColor}"></div>`;
+    }).join('');
+  });
+  document.getElementById('rcCharge').textContent = r.charge.count;
+  document.getElementById('rcWater').textContent = r.water.count;
+  document.getElementById('rcTrash').textContent = r.trash.count;
+  document.getElementById('rkCharge').textContent = r.charge.total ? r.charge.total.toLocaleString('en-US') : '—';
+  document.getElementById('rkWater').textContent = r.water.total ? r.water.total.toLocaleString('en-US') : '—';
+  document.getElementById('rkTrash').textContent = r.trash.total ? r.trash.total : '—';
+}
+
+/* HERO 数字 */
+function renderHero(dim) {
+  const h = DATASET[dim].hero;
+  document.getElementById('heroPeriod').textContent = DATASET[dim].periodLabel;
+  animateNum(document.getElementById('heroNum'), h.sweepDist, 1100, 1);
+  animateNum(document.getElementById('hs1'), h.sweepTime, 900, 1);
+  animateNum(document.getElementById('hs2'), h.avgSpeed, 900, 1);
+  document.getElementById('hs3').textContent = h.driveRatio;
+  document.getElementById('hs4').textContent = h.vsYesterdayPct;
+  document.getElementById('hs4Label').textContent = h.vsYesterdayLabel;
+  const timePart = h.vsYesterdayTime ? `截至 ${h.vsYesterdayTime} · ` : '';
+  document.getElementById('hd4').textContent = timePart + h.vsYesterdayAbs;
+  document.getElementById('hd3').textContent = `作业占比 ${h.workShare}%`;
+}
+
+/* 车队状态条 */
+function renderFleetStatus(dim) {
+  const f = DATASET[dim].fleet;
+  animateNum(document.getElementById('fleetOnline').firstChild ? document.getElementById('fleetOnline').childNodes[0] : document.getElementById('fleetOnline'), f.online, 800, 0);
+  // 简化：直接设置文本
+  document.getElementById('fleetOnline').innerHTML = `${f.online}<span class="total">/${f.total}</span>`;
+}
+
+/* 安全块 */
+function renderSafety(dim) {
+  const s = DATASET[dim].safety;
+  animateNum(document.getElementById('safetyAlert'), s.alert, 800, 0);
+  animateNum(document.getElementById('safetyTakeover'), s.takeover, 800, 0);
+}
+
+/* ============================================================
+   事件流
+   ============================================================ */
+const EVENTS = [
+  { time: '14:32:08', type: 'takeover', title: '人工接管 #TK-0318', meta: 'VHC-09 · 路径临时封闭', c: 'var(--teal)' },
+  { time: '14:18:42', type: 'alert', title: '激光雷达点云异常', meta: 'VHC-04 · 已自动降级', c: 'var(--rose)' },
+  { time: '13:54:11', type: 'trash', title: '垃圾倾倒完成', meta: 'VHC-09 · 容量 100%→12%', c: 'var(--violet)' },
+  { time: '13:22:36', type: 'charge', title: '充电开始', meta: 'VHC-12 · SOC 18% · 桩 #C-07', c: 'var(--lime)' },
+  { time: '12:48:09', type: 'alert', title: '电池温度告警', meta: 'VHC-04 · 48°C · 风扇提速', c: 'var(--rose)' },
+  { time: '12:15:53', type: 'water', title: '加水补给完成', meta: 'VHC-09 · 120 L · 站点 #W-03', c: '#4FC3F7' },
+  { time: '11:42:18', type: 'takeover', title: '人工接管 #TK-0317', meta: 'VHC-12 · 行人横穿', c: 'var(--teal)' },
+  { time: '11:08:44', type: 'charge', title: '充电完成', meta: 'VHC-09 · SOC 19%→95%', c: 'var(--lime)' },
+  { time: '10:36:22', type: 'alert', title: '通信链路抖动', meta: 'VHC-04 · 5G RSSI -98 dBm', c: 'var(--amber)' },
+];
+const EVENT_ICONS = {
+  takeover: 'M12 2 L4 5v6c0 5 3.5 9.5 8 11 4.5-1.5 8-6 8-11V5z',
+  alert: 'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z M12 9v4 M12 17h.01',
+  trash: 'M3 6h18 M8 6V4h8v2 M19 6l-1 14H6L5 6',
+  charge: 'M13 2 L4 14h7l-1 8 9-12h-7z',
+  water: 'M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z'
+};
+function renderEvents() {
+  const list = document.getElementById('eventList');
+  list.innerHTML = EVENTS.map((e, i) => `
+    <div class="event-row" style="--ec:${e.c}; animation-delay:${i*0.04}s">
+      <div class="event-time">${e.time}</div>
+      <div class="event-icon">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="${EVENT_ICONS[e.type]}"/>
+        </svg>
+      </div>
+      <div class="event-body">
+        <div class="event-title">${e.title}</div>
+        <div class="event-meta">${e.meta}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ============================================================
+   车队卡片
+   ============================================================ */
+const FLEET = [
+  { id: 'VHC-09', name: '黄埔-09', status: 'online', dist: 18.4, soc: 84 },
+  { id: 'VHC-04', name: '浦东-04', status: 'alert', dist: 12.1, soc: 42 },
+  { id: 'VHC-12', name: '徐汇-12', status: 'online', dist: 22.6, soc: 67 },
+  { id: 'VHC-07', name: '静安-07', status: 'online', dist: 9.8, soc: 91 },
+  { id: 'VHC-15', name: '长宁-15', status: 'idle', dist: 0, soc: 100 },
+  { id: 'VHC-03', name: '虹口-03', status: 'online', dist: 15.3, soc: 55 },
+  { id: 'VHC-21', name: '杨浦-21', status: 'online', dist: 19.7, soc: 73 },
+  { id: 'VHC-06', name: '闵行-06', status: 'offline', dist: 0, soc: 0 },
+  { id: 'VHC-18', name: '宝山-18', status: 'online', dist: 11.2, soc: 88 },
+  { id: 'VHC-02', name: '嘉定-02', status: 'online', dist: 7.4, soc: 62 },
+  { id: 'VHC-08', name: '松江-08', status: 'online', dist: 16.8, soc: 48 },
+  { id: 'VHC-11', name: '青浦-11', status: 'online', dist: 13.5, soc: 79 },
+  { id: 'VHC-19', name: '奉贤-19', status: 'online', dist: 8.9, soc: 65 },
+  { id: 'VHC-05', name: '金山-05', status: 'online', dist: 14.2, soc: 56 },
+];
+function renderFleet() {
+  const strip = document.getElementById('fleetStrip');
+  strip.innerHTML = FLEET.map(v => `
+    <div class="fleet-card ${v.status}">
+      <span class="fleet-status-pill ${v.status}"></span>
+      <div class="fleet-id">${v.id}</div>
+      <div class="fleet-name">${v.name}</div>
+      <div class="fleet-stat"><span>里程</span><span class="v">${v.dist.toFixed(1)} km</span></div>
+      <div class="fleet-stat"><span>SOC</span><span class="v">${v.soc}%</span></div>
+    </div>
+  `).join('');
+}
+
+/* ============================================================
+   维度切换
+   ============================================================ */
+function switchDim(dim) {
+  document.querySelectorAll('#dimSwitch button').forEach(b => {
+    b.classList.toggle('active', b.dataset.dim === dim);
+  });
+  renderHero(dim);
+  renderHeroTrend(dim);
+  renderEffRing(dim);
+  renderFleetStatus(dim);
+  renderSafety(dim);
+  renderRhythm(dim);
+  renderRadar(dim);
+  renderResourceTracks(dim);
+}
+
+/* ============================================================
+   时钟 + 遥测抖动
+   ============================================================ */
+function tickClock() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('clock').textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+/* ============================================================
+   初始化
+   ============================================================ */
+window.addEventListener('load', () => {
+  rhythmChart = echarts.init(document.getElementById('rhythmChart'));
+  radarChart = echarts.init(document.getElementById('radarChart'));
+
+  renderEvents();
+  renderFleet();
+  switchDim('day');
+
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  document.getElementById('dimSwitch').addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (btn) switchDim(btn.dataset.dim);
+  });
+
+  window.addEventListener('resize', () => {
+    [rhythmChart, radarChart, heroTrendChart, effRingChart].forEach(c => c && c.resize());
+  });
+});
+</script>
+</body>
+</html>

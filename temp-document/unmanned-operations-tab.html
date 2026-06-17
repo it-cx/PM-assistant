@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>环卫云 - 项目作业监管 - 无人作业Tab</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#050c18;--bg2:#0a1832;--bg3:#0d2040;
+  --bd:rgba(0,180,255,.12);--bd2:rgba(0,180,255,.06);
+  --cyan:#00d4ff;--blue:#4094ff;--green:#00e676;
+  --orange:#ff9100;--red:#ff5252;
+  --t1:#e4edf8;--t2:rgba(180,200,230,.5);--t3:rgba(140,160,190,.35);
+}
+body{background:var(--bg);color:var(--t1);font:13px/1.4 "PingFang SC","Microsoft YaHei",sans-serif;height:100vh;overflow:hidden}
+
+/* ===== LAYOUT ===== */
+.page{display:grid;grid-template-rows:52px 42px 1fr;grid-template-columns:1fr 400px;height:100vh}
+.topbar{grid-column:1/-1;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+.topbar-left{display:flex;align-items:center;gap:16px}
+.breadcrumb{font-size:12px;color:var(--t2)}
+.breadcrumb b{color:var(--t1);font-weight:500}
+.project-name{font-size:14px;font-weight:600;color:var(--cyan)}
+.topbar-right{display:flex;align-items:center;gap:14px;font-size:12px;color:var(--t2)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);display:inline-block;margin-right:4px}
+
+/* Tabs */
+.tabs{grid-column:1/-1;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;padding:0 20px;gap:0}
+.tab{padding:10px 22px;font-size:13px;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;display:flex;align-items:center;gap:6px}
+.tab:hover{color:var(--t1)}
+.tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+.tab .badge{background:rgba(0,212,255,.1);color:var(--cyan);padding:1px 7px;border-radius:10px;font-size:10px}
+
+/* ===== MAP ===== */
+.map-area{position:relative;background:radial-gradient(ellipse at 50% 50%,rgba(0,50,100,.25),var(--bg) 70%);overflow:hidden}
+.map-grid{position:absolute;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(0,160,255,.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,160,255,.03) 1px,transparent 1px);
+  background-size:60px 60px}
+
+/* Stats bar */
+.stats-bar{position:absolute;top:12px;left:12px;display:flex;gap:8px;z-index:20}
+.stat-chip{background:rgba(5,12,24,.88);border:1px solid var(--bd);border-radius:6px;padding:6px 14px;display:flex;align-items:center;gap:8px;backdrop-filter:blur(8px)}
+.stat-chip .v{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat-chip .v.c1{color:var(--cyan)}.stat-chip .v.c2{color:var(--green)}.stat-chip .v.c3{color:var(--orange)}.stat-chip .v.c4{color:var(--t3)}
+.stat-chip .l{font-size:10px;color:var(--t2)}
+
+/* Vehicle markers */
+.vm{position:absolute;z-index:10;cursor:pointer;transition:transform .15s}
+.vm:hover{transform:scale(1.15);z-index:20}
+.vm-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:2px solid;position:relative}
+.vm-icon::before{content:"";position:absolute;inset:-5px;border-radius:50%;border:1px solid;border-color:inherit;opacity:0;animation:ring 3s ease-out infinite}
+@keyframes ring{0%{opacity:0;transform:scale(1)}20%{opacity:.3}100%{opacity:0;transform:scale(2)}}
+.vm-icon.s1{background:rgba(0,212,255,.12);border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 14px rgba(0,212,255,.25)}
+.vm-icon.s2{background:rgba(0,230,118,.1);border-color:var(--green);color:var(--green);box-shadow:0 0 10px rgba(0,230,118,.2)}
+.vm-icon.s3{background:rgba(255,145,0,.1);border-color:var(--orange);color:var(--orange)}
+.vm-icon.s4{background:rgba(100,110,130,.08);border-color:rgba(100,110,130,.3);color:rgba(100,110,130,.5)}
+.vm-name{position:absolute;top:38px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--t2);white-space:nowrap;pointer-events:none}
+
+/* Popup */
+.popup{position:absolute;z-index:50;background:rgba(8,20,40,.96);border:1px solid rgba(0,212,255,.35);border-radius:8px;padding:14px 16px;min-width:210px;box-shadow:0 8px 40px rgba(0,0,0,.6);display:none;backdrop-filter:blur(12px)}
+.popup.show{display:block}
+.popup-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.popup-h h4{font-size:13px;font-weight:600;color:var(--cyan)}
+.popup-h .x{cursor:pointer;color:var(--t3);font-size:16px;line-height:1}
+.popup-h .x:hover{color:var(--t1)}
+.popup-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.popup-f .fl{font-size:10px;color:var(--t3);margin-bottom:1px}
+.popup-f .fv{font-size:12px;color:var(--t1);font-weight:500}
+.popup-div{height:1px;background:var(--bd);margin:10px 0}
+.popup-btns{display:flex;gap:6px}
+.popup-btn{flex:1;padding:6px;border:1px solid var(--bd);border-radius:4px;background:0;color:var(--t2);font-size:11px;cursor:pointer;transition:.15s;text-align:center}
+.popup-btn:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,212,255,.04)}
+.popup-btn.p{background:rgba(0,212,255,.1);border-color:rgba(0,212,255,.35);color:var(--cyan)}
+
+/* Trajectory */
+.traj{position:absolute;inset:0;z-index:8;pointer-events:none;display:none}
+.traj.show{display:block}
+.traj svg{width:100%;height:100%}
+
+/* Map zoom */
+.map-zoom{position:absolute;bottom:16px;right:16px;display:flex;flex-direction:column;gap:4px;z-index:20}
+.zm{width:32px;height:32px;background:rgba(5,12,24,.88);border:1px solid var(--bd);border-radius:4px;color:var(--t2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+.zm:hover{color:var(--cyan);border-color:var(--cyan)}
+
+/* Legend */
+.map-legend{position:absolute;bottom:16px;left:12px;display:flex;gap:14px;z-index:20;background:rgba(5,12,24,.88);border:1px solid var(--bd);border-radius:6px;padding:8px 14px;backdrop-filter:blur(8px)}
+.lg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--t2)}
+.lg-dot{width:8px;height:8px;border-radius:50%}
+
+/* ===== RIGHT PANEL ===== */
+.rpanel{background:var(--bg2);border-left:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden}
+.rpanel-hd{padding:12px 16px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center}
+.rpanel-hd h3{font-size:13px;font-weight:600}
+.add-btn{padding:5px 12px;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.25);border-radius:4px;color:var(--cyan);font-size:11px;cursor:pointer;transition:.15s}
+.add-btn:hover{background:rgba(0,212,255,.18)}
+
+/* ===== GANTT ===== */
+.gantt-wrap{flex:1;overflow-y:auto;overflow-x:hidden}
+
+/* Time header - uses the SAME coordinate system as track */
+.gantt-hd{position:sticky;top:0;background:var(--bg2);z-index:5;border-bottom:1px solid var(--bd);display:flex}
+.gantt-hd-label{width:80px;flex-shrink:0;padding:8px 10px;font-size:10px;color:var(--t3);border-right:1px solid var(--bd2);text-align:center}
+.gantt-hd-times{flex:1;position:relative;height:32px}
+.gantt-hour{position:absolute;top:0;bottom:0;width:1px;background:var(--bd2)}
+.gantt-hour span{position:absolute;bottom:4px;left:4px;font-size:9px;color:var(--t3)}
+.gantt-hour.now span{color:var(--cyan);font-weight:600}
+
+/* Gantt rows */
+.gantt-row{display:flex;border-bottom:1px solid var(--bd2);height:52px}
+.gantt-label{width:80px;flex-shrink:0;padding:8px 10px;display:flex;flex-direction:column;justify-content:center;gap:1px;border-right:1px solid var(--bd2)}
+.gantt-label .gn{font-size:11px;font-weight:600;color:var(--t1)}
+.gantt-label .gs{font-size:9px}
+.gs.s1{color:var(--cyan)}.gs.s2{color:var(--green)}.gs.s3{color:var(--orange)}.gs.s4{color:var(--t3)}
+
+.gantt-track{flex:1;position:relative;height:52px}
+
+/* Task bars - positioned with calc(h/24*100%) */
+.gantt-bar{position:absolute;top:10px;height:32px;border-radius:4px;cursor:pointer;display:flex;align-items:center;padding:0 8px;font-size:9px;font-weight:500;overflow:hidden;white-space:nowrap;transition:box-shadow .15s,transform .15s;z-index:3;letter-spacing:.3px}
+.gantt-bar:hover{box-shadow:0 2px 16px rgba(0,0,0,.5);z-index:4;transform:translateY(-1px)}
+.gantt-bar.s1{background:linear-gradient(135deg,rgba(0,212,255,.22),rgba(0,212,255,.08));border:1px solid rgba(0,212,255,.45);color:var(--cyan)}
+.gantt-bar.s2{background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.3);color:var(--green)}
+.gantt-bar.s3{background:rgba(64,148,255,.08);border:1px solid rgba(64,148,255,.25);color:var(--blue)}
+.gantt-bar.s4{background:rgba(255,145,0,.08);border:1px dashed rgba(255,145,0,.35);color:var(--orange);opacity:.75}
+.gantt-bar.s5{background:rgba(100,110,130,.04);border:1px dashed rgba(100,110,130,.2);color:var(--t3);text-decoration:line-through;opacity:.45}
+
+/* Now line */
+.now-line{position:absolute;top:0;bottom:0;width:2px;background:var(--red);z-index:6;pointer-events:none}
+.now-line::before{content:"NOW";position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:8px;color:var(--red);font-weight:600;letter-spacing:1px}
+
+/* Vertical hour lines in track */
+.trk-line{position:absolute;top:0;bottom:0;width:1px;background:var(--bd2);pointer-events:none;z-index:1}
+
+/* ===== CONTEXT MENU ===== */
+.ctx{position:fixed;z-index:100;background:rgba(8,20,40,.96);border:1px solid var(--bd);border-radius:6px;padding:4px 0;min-width:150px;box-shadow:0 8px 32px rgba(0,0,0,.6);display:none;backdrop-filter:blur(8px)}
+.ctx.show{display:block}
+.ctx-i{padding:7px 14px;font-size:12px;color:var(--t1);cursor:pointer;display:flex;align-items:center;gap:8px;transition:.12s}
+.ctx-i:hover{background:rgba(0,180,255,.06)}
+.ctx-i.dg{color:var(--red)}.ctx-i.dg:hover{background:rgba(255,82,82,.06)}
+.ctx-d{height:1px;background:var(--bd);margin:4px 0}
+
+/* ===== MODALS ===== */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.modal-bg.show{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;width:400px;max-width:92vw;box-shadow:0 16px 64px rgba(0,0,0,.5)}
+.modal-hd{padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center}
+.modal-hd h3{font-size:14px;font-weight:600}
+.modal-x{cursor:pointer;color:var(--t3);font-size:18px}.modal-x:hover{color:var(--t1)}
+.modal-bd{padding:18px}
+.modal-ft{padding:12px 18px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:8px}
+
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:11px;color:var(--t2);margin-bottom:5px}
+.fi,.fs{width:100%;padding:7px 10px;background:rgba(4,10,20,.7);border:1px solid var(--bd);border-radius:4px;color:var(--t1);font-size:12px;outline:0;transition:border .2s;font-family:inherit}
+.fi:focus,.fs:focus{border-color:var(--cyan)}
+.fs option{background:var(--bg2)}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.btn{padding:7px 16px;border-radius:4px;font-size:12px;cursor:pointer;border:1px solid transparent;transition:.15s;font-family:inherit}
+.btn0{background:0;border-color:var(--bd);color:var(--t2)}.btn0:hover{border-color:var(--t2);color:var(--t1)}
+.btn1{background:rgba(0,212,255,.12);border-color:rgba(0,212,255,.35);color:var(--cyan)}.btn1:hover{background:rgba(0,212,255,.22)}
+.btnd{background:rgba(255,82,82,.08);border-color:rgba(255,82,82,.25);color:var(--red)}.btnd:hover{background:rgba(255,82,82,.16)}
+
+.cfm-txt{font-size:13px;color:var(--t1);margin-bottom:6px;line-height:1.5}
+.cfm-sub{font-size:11px;color:var(--t2)}
+
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:0}::-webkit-scrollbar-thumb{background:rgba(0,180,255,.15);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="page">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="breadcrumb">作业监管 &gt; <b>北京亦庄项目</b></div>
+      <div class="project-name">北京亦庄无人环卫示范项目</div>
+    </div>
+    <div class="topbar-right">
+      <div><span class="live-dot"></span>实时监控中</div>
+      <div>2026-06-10 14:32</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab">人员 <span class="badge">24</span></div>
+    <div class="tab">车辆 <span class="badge">8</span></div>
+    <div class="tab active">无人作业 <span class="badge">12</span></div>
+  </div>
+
+  <!-- Map -->
+  <div class="map-area" id="mapArea">
+    <div class="map-grid"></div>
+
+    <div class="stats-bar">
+      <div class="stat-chip"><div><div class="v c1">10</div><div class="l">在线</div></div></div>
+      <div class="stat-chip"><div><div class="v c2">1</div><div class="l">空闲</div></div></div>
+      <div class="stat-chip"><div><div class="v c3">1</div><div class="l">充电</div></div></div>
+      <div class="stat-chip"><div><div class="v c4">2</div><div class="l">离线</div></div></div>
+    </div>
+
+    <!-- Vehicles -->
+    <div class="vm" style="top:28%;left:22%" onclick="openPopup(1,event)"><div class="vm-icon s1">A1</div><div class="vm-name">亦庄-A01</div></div>
+    <div class="vm" style="top:42%;left:38%" onclick="openPopup(2,event)"><div class="vm-icon s1">A2</div><div class="vm-name">亦庄-A02</div></div>
+    <div class="vm" style="top:33%;left:52%" onclick="openPopup(3,event)"><div class="vm-icon s1">A3</div><div class="vm-name">亦庄-A03</div></div>
+    <div class="vm" style="top:54%;left:28%" onclick="openPopup(4,event)"><div class="vm-icon s1">B1</div><div class="vm-name">亦庄-B01</div></div>
+    <div class="vm" style="top:58%;left:48%" onclick="openPopup(5,event)"><div class="vm-icon s1">B2</div><div class="vm-name">亦庄-B02</div></div>
+    <div class="vm" style="top:22%;left:62%" onclick="openPopup(6,event)"><div class="vm-icon s1">C1</div><div class="vm-name">亦庄-C01</div></div>
+    <div class="vm" style="top:66%;left:62%" onclick="openPopup(7,event)"><div class="vm-icon s1">C2</div><div class="vm-name">亦庄-C02</div></div>
+    <div class="vm" style="top:38%;left:72%" onclick="openPopup(8,event)"><div class="vm-icon s1">D1</div><div class="vm-name">亦庄-D01</div></div>
+    <div class="vm" style="top:18%;left:42%" onclick="openPopup(9,event)"><div class="vm-icon s2">D2</div><div class="vm-name">亦庄-D02</div></div>
+    <div class="vm" style="top:72%;left:36%" onclick="openPopup(10,event)"><div class="vm-icon s3">E1</div><div class="vm-name">亦庄-E01</div></div>
+    <div class="vm" style="top:48%;left:80%"><div class="vm-icon s4">E2</div><div class="vm-name">亦庄-E02</div></div>
+    <div class="vm" style="top:12%;left:16%"><div class="vm-icon s4">F1</div><div class="vm-name">亦庄-F01</div></div>
+
+    <!-- Trajectory -->
+    <div class="traj" id="traj">
+      <svg viewBox="0 0 1000 600" preserveAspectRatio="none">
+        <path d="M220 170 Q280 140 340 190 Q400 240 380 310 Q350 380 290 350 Q230 320 220 170Z" fill="none" stroke="rgba(0,212,255,.35)" stroke-width="2" stroke-dasharray="8,5" id="tPath"/>
+        <circle r="5" fill="var(--cyan)"><animateMotion dur="5s" repeatCount="indefinite"><mpath href="#tPath"/></animateMotion></circle>
+      </svg>
+    </div>
+
+    <!-- Popup -->
+    <div class="popup" id="popup">
+      <div class="popup-h"><h4 id="pName">亦庄-A01</h4><div class="x" onclick="closePopup()">&times;</div></div>
+      <div class="popup-grid">
+        <div class="popup-f"><div class="fl">状态</div><div class="fv" id="pStatus">作业中</div></div>
+        <div class="popup-f"><div class="fl">当前路线</div><div class="fv" id="pRoute">科创路</div></div>
+        <div class="popup-f"><div class="fl">已完成任务</div><div class="fv" id="pTask">3</div></div>
+        <div class="popup-f"><div class="fl">今日里程</div><div class="fv" id="pMile">42.8km</div></div>
+      </div>
+      <div class="popup-div"></div>
+      <div class="popup-btns">
+        <button class="popup-btn" onclick="toggleTraj()">轨迹回放</button>
+        <button class="popup-btn p">实时追踪</button>
+      </div>
+    </div>
+
+    <div class="map-legend">
+      <div class="lg-item"><div class="lg-dot" style="background:var(--cyan);box-shadow:0 0 6px var(--cyan)"></div>作业中</div>
+      <div class="lg-item"><div class="lg-dot" style="background:var(--green)"></div>空闲</div>
+      <div class="lg-item"><div class="lg-dot" style="background:var(--orange)"></div>充电</div>
+      <div class="lg-item"><div class="lg-dot" style="background:rgba(100,110,130,.4)"></div>离线</div>
+    </div>
+
+    <div class="map-zoom">
+      <button class="zm">+</button>
+      <button class="zm">-</button>
+    </div>
+  </div>
+
+  <!-- Right: Gantt -->
+  <div class="rpanel">
+    <div class="rpanel-hd">
+      <h3>今日排班</h3>
+      <button class="add-btn" onclick="showM('mTask')">+ 临时任务</button>
+    </div>
+    <div class="gantt-wrap" id="ganttWrap"></div>
+  </div>
+</div>
+
+<!-- Context Menu -->
+<div class="ctx" id="ctx">
+  <div class="ctx-i" id="ctxPause" onclick="doCtx('pause')">暂停任务</div>
+  <div class="ctx-i" id="ctxExec" onclick="doCtx('exec')">立即执行</div>
+  <div class="ctx-d"></div>
+  <div class="ctx-i dg" id="ctxCancel" onclick="doCtx('cancel')">取消排班</div>
+</div>
+
+<!-- Task Modal -->
+<div class="modal-bg" id="mTask">
+  <div class="modal">
+    <div class="modal-hd"><h3>下发临时任务</h3><div class="modal-x" onclick="hideM('mTask')">&times;</div></div>
+    <div class="modal-bd">
+      <div class="fg"><label class="fl">选择车辆</label><select class="fs"><option value="">请选择空闲车辆</option><option>亦庄-D02 (空闲)</option></select></div>
+      <div class="fg"><label class="fl">选择路线</label><select class="fs"><option value="">请选择作业路线</option><option>科创路 (3.2km)</option><option>经海路 (4.8km)</option><option>荣华路 (2.1km)</option></select></div>
+      <div class="fr">
+        <div class="fg"><label class="fl">开始时间</label><input class="fi" type="time" value="15:00"></div>
+        <div class="fg"><label class="fl">结束时间</label><input class="fi" type="time" value="17:00"></div>
+      </div>
+    </div>
+    <div class="modal-ft"><button class="btn btn0" onclick="hideM('mTask')">取消</button><button class="btn btn1" onclick="hideM('mTask')">确认下发</button></div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-bg" id="mCfm">
+  <div class="modal">
+    <div class="modal-hd"><h3 id="cfmTitle">确认</h3><div class="modal-x" onclick="hideM('mCfm')">&times;</div></div>
+    <div class="modal-bd"><div class="cfm-txt" id="cfmTxt"></div><div class="cfm-sub" id="cfmSub"></div></div>
+    <div class="modal-ft"><button class="btn btn0" onclick="hideM('mCfm')">取消</button><button class="btn btn1" id="cfmBtn" onclick="hideM('mCfm')">确认</button></div>
+  </div>
+</div>
+
+<script>
+// Data
+const NOW = 14.5; // 14:30
+const P = h => (h / 24 * 100).toFixed(3) + '%'; // hour to percentage
+
+const vehicles = [
+  {id:'A01',st:'s1',stxt:'作业中',route:'科创路',tasks:[
+    {s:6,e:10.8,route:'科创路',st:'s1'},{s:11,e:15,route:'园区路',st:'s2'},{s:16,e:20,route:'滨河路',st:'s3'}
+  ]},
+  {id:'A02',st:'s1',stxt:'作业中',route:'经海路',tasks:[
+    {s:6,e:10,route:'经海路',st:'s1'},{s:12,e:17,route:'科创北街',st:'s3'}
+  ]},
+  {id:'A03',st:'s1',stxt:'作业中',route:'文化园路',tasks:[
+    {s:4,e:8,route:'荣华路',st:'s2'},{s:10,e:15,route:'文化园路',st:'s1'},{s:18,e:21,route:'中和街',st:'s3'}
+  ]},
+  {id:'B01',st:'s1',stxt:'作业中',route:'万源街',tasks:[
+    {s:5,e:9,route:'天宝街',st:'s2'},{s:11,e:15,route:'万源街',st:'s1'}
+  ]},
+  {id:'B02',st:'s1',stxt:'作业中',route:'荣京东街',tasks:[
+    {s:7,e:10,route:'宏达路',st:'s2'},{s:12,e:16,route:'荣京东街',st:'s1'},{s:18,e:20,route:'科创街',st:'s3'}
+  ]},
+  {id:'C01',st:'s4',stxt:'已暂停',route:'',tasks:[
+    {s:5,e:8,route:'兴业街',st:'s2'},{s:10,e:15,route:'博兴路',st:'s4',paused:1},{s:17,e:20,route:'科创南街',st:'s3'}
+  ]},
+  {id:'C02',st:'s1',stxt:'作业中',route:'泰河路',tasks:[
+    {s:8,e:13,route:'泰河路',st:'s1'},{s:16,e:20,route:'四合路',st:'s3'}
+  ]},
+  {id:'D01',st:'s1',stxt:'作业中',route:'永昌路',tasks:[
+    {s:4,e:8,route:'同济南路',st:'s2'},{s:10,e:14,route:'康定街',st:'s5'},{s:14,e:18,route:'永昌路',st:'s1'}
+  ]},
+  {id:'D02',st:'s2',stxt:'空闲',route:'',tasks:[
+    {s:5,e:9,route:'科创中路',st:'s2'}
+  ]},
+  {id:'E01',st:'s3',stxt:'充电中',route:'',tasks:[
+    {s:4,e:9,route:'经海一路',st:'s2'},{s:16,e:20,route:'科创北街',st:'s3'}
+  ]}
+];
+
+// Build Gantt
+function buildGantt() {
+  const wrap = document.getElementById('ganttWrap');
+  let html = '';
+
+  // Header
+  html += '<div class="gantt-hd"><div class="gantt-hd-label">车辆</div><div class="gantt-hd-times">';
+  for (let h = 0; h < 24; h++) {
+    const isNow = (h === 14);
+    html += `<div class="gantt-hour${isNow?' now':''}" style="left:${P(h)}"><span>${String(h).padStart(2,'0')}</span></div>`;
+  }
+  // closing line at 24h
+  html += `<div class="gantt-hour" style="left:${P(24)}"></div>`;
+  html += '</div></div>';
+
+  // Rows
+  vehicles.forEach((v, vi) => {
+    html += `<div class="gantt-row">`;
+    html += `<div class="gantt-label"><div class="gn">${v.id}</div><div class="gs ${v.st}">${v.stxt}${v.route?' - '+v.route:''}</div></div>`;
+    html += `<div class="gantt-track">`;
+
+    // Vertical hour lines
+    for (let h = 0; h <= 24; h++) {
+      html += `<div class="trk-line" style="left:${P(h)}"></div>`;
+    }
+
+    // Task bars
+    v.tasks.forEach(t => {
+      const left = P(t.s);
+      const width = ((t.e - t.s) / 24 * 100).toFixed(3) + '%';
+      const label = t.route + ' ' + String(Math.floor(t.s)).padStart(2,'0') + ':' + String(Math.round((t.s%1)*60)).padStart(2,'0') + '-' + String(Math.floor(t.e)).padStart(2,'0') + ':' + String(Math.round((t.e%1)*60)).padStart(2,'0') + (t.paused?' (已暂停)':'');
+      const cls = t.st === 's5' ? 's5' : (t.paused ? 's4' : t.st);
+      html += `<div class="gantt-bar ${cls}" style="left:${left};width:${width}" data-v="${v.id}" data-st="${t.st}" data-paused="${t.paused||0}" onclick="openCtx(event,this)">${label}</div>`;
+    });
+
+    // Now line
+    html += `<div class="now-line" style="left:${P(NOW)}"></div>`;
+    html += '</div></div>';
+  });
+
+  wrap.innerHTML = html;
+}
+buildGantt();
+
+// Popup
+const pData = {
+  1:{n:'亦庄-A01',s:'作业中',sc:'var(--cyan)',r:'科创路',t:3,m:'42.8'},
+  2:{n:'亦庄-A02',s:'作业中',sc:'var(--cyan)',r:'经海路',t:2,m:'38.2'},
+  3:{n:'亦庄-A03',s:'作业中',sc:'var(--cyan)',r:'文化园路',t:4,m:'56.1'},
+  4:{n:'亦庄-B01',s:'作业中',sc:'var(--cyan)',r:'万源街',t:3,m:'31.5'},
+  5:{n:'亦庄-B02',s:'作业中',sc:'var(--cyan)',r:'荣京东街',t:2,m:'28.7'},
+  6:{n:'亦庄-C01',s:'已暂停',sc:'var(--orange)',r:'-',t:1,m:'12.3'},
+  7:{n:'亦庄-C02',s:'作业中',sc:'var(--cyan)',r:'泰河路',t:2,m:'44.0'},
+  8:{n:'亦庄-D01',s:'作业中',sc:'var(--cyan)',r:'永昌路',t:4,m:'51.2'},
+  9:{n:'亦庄-D02',s:'空闲',sc:'var(--green)',r:'-',t:1,m:'18.6'},
+  10:{n:'亦庄-E01',s:'充电中',sc:'var(--orange)',r:'-',t:3,m:'39.4'}
+};
+function openPopup(id,e){
+  e.stopPropagation();
+  const d=pData[id],p=document.getElementById('popup'),ma=document.getElementById('mapArea');
+  document.getElementById('pName').textContent=d.n;
+  const se=document.getElementById('pStatus');se.textContent=d.s;se.style.color=d.sc;
+  document.getElementById('pRoute').textContent=d.r;
+  document.getElementById('pTask').textContent=d.t;
+  document.getElementById('pMile').textContent=d.m+'km';
+  const r=e.currentTarget.getBoundingClientRect(),mr=ma.getBoundingClientRect();
+  let left=r.right-mr.left+10,top=r.top-mr.top-30;
+  if(left+220>mr.width)left=r.left-mr.left-220;
+  if(top<0)top=r.bottom-mr.top+10;
+  p.style.left=left+'px';p.style.top=top+'px';p.classList.add('show');
+}
+function closePopup(){document.getElementById('popup').classList.remove('show')}
+
+let trajOn=false;
+function toggleTraj(){trajOn=!trajOn;document.getElementById('traj').classList.toggle('show',trajOn)}
+
+// Context menu
+let ctxV='',ctxSt='',ctxPaused=false;
+function openCtx(e,el){
+  e.stopPropagation();
+  ctxV=el.dataset.v;ctxSt=el.dataset.st;ctxPaused=el.dataset.paused==='1';
+  const m=document.getElementById('ctx');
+  const pI=document.getElementById('ctxPause'),eI=document.getElementById('ctxExec'),cI=document.getElementById('ctxCancel');
+  const isDone=ctxSt==='s2'||ctxSt==='s5';
+  if(isDone){m.classList.remove('show');return}
+  pI.style.display=(ctxSt==='s1'||ctxPaused)?'flex':'none';
+  pI.textContent=ctxPaused?'恢复任务':'暂停任务';
+  eI.style.display=(ctxSt==='s3'&&!ctxPaused)?'flex':'none';
+  cI.style.display=(ctxSt==='s1'||ctxSt==='s3'||ctxPaused)?'flex':'none';
+  m.style.left=e.pageX+'px';m.style.top=e.pageY+'px';m.classList.add('show');
+}
+function doCtx(a){
+  document.getElementById('ctx').classList.remove('show');
+  const t=document.getElementById('cfmTitle'),tx=document.getElementById('cfmTxt'),su=document.getElementById('cfmSub'),b=document.getElementById('cfmBtn');
+  if(a==='pause'){
+    t.textContent=ctxPaused?'恢复任务':'暂停任务';
+    tx.textContent=ctxPaused?`确认恢复 ${ctxV} 当前暂停的任务？`:`确认暂停 ${ctxV} 当前正在执行的任务？`;
+    su.textContent=ctxPaused?'车辆将恢复到暂停前的作业状态继续执行。':'车辆将停止当前作业，原地待命等待进一步指令。';
+    b.textContent='确认';b.className='btn btn1';
+  }else if(a==='exec'){
+    t.textContent='立即执行';
+    tx.textContent=`确认立即派发 ${ctxV} 执行此排班任务？`;
+    su.textContent='任务将提前开始，请确保车辆处于可用状态。';
+    b.textContent='确认执行';b.className='btn btn1';
+  }else{
+    t.textContent='取消排班';
+    tx.textContent=`确认取消 ${ctxV} 的此排班任务？`;
+    su.textContent='取消后排班记录将保留，标注为"已取消"状态。';
+    b.textContent='确认取消';b.className='btn btnd';
+  }
+  showM('mCfm');
+}
+
+function showM(id){document.getElementById(id).classList.add('show')}
+function hideM(id){document.getElementById(id).classList.remove('show')}
+
+document.addEventListener('click',e=>{
+  document.getElementById('ctx').classList.remove('show');
+  if(!e.target.closest('.popup')&&!e.target.closest('.vm'))closePopup();
+});
+</script>
+</body>
+</html>
