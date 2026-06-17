@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>智慧环卫 - 移动端</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0F4C81;
+      --primary-light: #1a6bb5;
+      --primary-dark: #0a3359;
+      --accent: #0d9488;
+      --accent-light: #14b8a6;
+      --surface: #F4F7FA;
+      --card: #FFFFFF;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --border: #e8edf3;
+      --danger: #dc2626;
+      --warning: #d97706;
+      --success: #16a34a;
+      --info: #2563eb;
+      --nav-h: 56px;
+      --tab-h: 64px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html { font-size: 16px; }
+    body {
+      font-family: 'Noto Sans SC', 'DM Sans', system-ui, sans-serif;
+      background: var(--surface);
+      color: var(--text-primary);
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== STATUS BAR ===== */
+    .status-bar {
+      height: 44px;
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .status-bar-time { letter-spacing: 0.5px; }
+    .status-bar-icons { display: flex; gap: 6px; align-items: center; }
+    .status-bar-icons svg { width: 16px; height: 16px; }
+
+    /* ===== NAV BAR ===== */
+    .nav-bar {
+      height: var(--nav-h);
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      position: sticky;
+      top: 44px;
+      z-index: 99;
+    }
+    .nav-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.3px;
+    }
+    .nav-subtitle {
+      font-size: 10px;
+      color: rgba(255,255,255,0.6);
+      margin-top: 1px;
+    }
+    .nav-actions { display: flex; gap: 8px; }
+    .nav-btn {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      border: none;
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: background 0.2s;
+    }
+    .nav-btn:active { background: rgba(255,255,255,0.25); }
+    .nav-btn svg { width: 20px; height: 20px; }
+    .nav-badge {
+      position: absolute;
+      top: 4px; right: 4px;
+      width: 16px; height: 16px;
+      background: var(--danger);
+      border-radius: 50%;
+      font-size: 9px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--primary);
+    }
+
+    /* ===== CONTENT AREA ===== */
+    .content {
+      padding-bottom: calc(var(--tab-h) + var(--safe-bottom) + 8px);
+      min-height: calc(100vh - 44px - var(--nav-h));
+    }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ===== TAB BAR ===== */
+    .tab-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: calc(var(--tab-h) + var(--safe-bottom));
+      padding-bottom: var(--safe-bottom);
+      background: #fff;
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 100;
+      box-shadow: 0 -2px 20px rgba(0,0,0,0.04);
+    }
+    .tab-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: color 0.2s;
+      position: relative;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .tab-item svg { width: 24px; height: 24px; transition: transform 0.2s; }
+    .tab-item span { font-size: 10px; font-weight: 500; }
+    .tab-item.active { color: var(--primary); }
+    .tab-item.active svg { transform: scale(1.08); }
+    .tab-item .tab-dot {
+      position: absolute;
+      top: 6px;
+      right: calc(50% - 18px);
+      width: 6px; height: 6px;
+      background: var(--danger);
+      border-radius: 50%;
+    }
+
+    /* ===== CARDS ===== */
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 16px;
+      border: 1px solid var(--border);
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .card-badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-weight: 500;
+    }
+    .card-badge-green { background: #f0fdf4; color: var(--success); }
+    .card-badge-red { background: #fef2f2; color: var(--danger); }
+    .card-badge-blue { background: #eff6ff; color: var(--info); }
+    .card-badge-amber { background: #fffbeb; color: var(--warning); }
+
+    /* ===== KPI GRID ===== */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding: 16px;
+    }
+    .kpi-item {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px 8px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+    .kpi-value {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .kpi-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      line-height: 1.3;
+    }
+
+    /* ===== QUICK ACTIONS ===== */
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      padding: 0 16px;
+      margin-bottom: 16px;
+    }
+    .quick-action {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 12px 4px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .quick-action:active { background: rgba(15,76,129,0.06); }
+    .quick-icon {
+      width: 44px; height: 44px;
+      border-radius: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .quick-icon svg { width: 22px; height: 22px; }
+    .quick-label { font-size: 11px; color: var(--text-secondary); font-weight: 500; }
+
+    /* ===== PROGRESS ===== */
+    .progress-bar {
+      height: 6px;
+      background: #f1f5f9;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.8s ease;
+    }
+
+    /* ===== LIST ITEMS ===== */
+    .list-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #f4f7fa;
+    }
+    .list-item:last-child { border-bottom: none; }
+    .list-avatar {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .list-content { flex: 1; min-width: 0; }
+    .list-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+    .list-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .list-right { text-align: right; flex-shrink: 0; }
+    .list-time { font-size: 10px; color: var(--text-muted); }
+    .list-tag {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      margin-top: 3px;
+      display: inline-block;
+    }
+
+    /* ===== SECTION ===== */
+    .section { padding: 0 16px; margin-bottom: 16px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .section-more {
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .section-more svg { width: 14px; height: 14px; }
+
+    /* ===== HOME HEADER BANNER ===== */
+    .home-banner {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 60%, var(--primary-light) 100%);
+      padding: 16px 16px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .home-banner::after {
+      content: '';
+      position: absolute;
+      top: -30px; right: -20px;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.04);
+    }
+    .home-banner::before {
+      content: '';
+      position: absolute;
+      bottom: -40px; left: 40px;
+      width: 160px; height: 160px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.03);
+    }
+    .home-banner-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      position: relative;
+      z-index: 1;
+    }
+    .home-greeting { color: rgba(255,255,255,0.7); font-size: 12px; }
+    .home-name { color: #fff; font-size: 18px; font-weight: 700; margin-top: 2px; }
+    .home-user-avatar {
+      width: 42px; height: 42px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .home-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      position: relative;
+      z-index: 1;
+    }
+    .home-stat {
+      background: rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 12px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .home-stat-value {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .home-stat-label {
+      font-size: 10px;
+      color: rgba(255,255,255,0.6);
+      margin-top: 2px;
+    }
+
+    /* ===== ALERT BANNER ===== */
+    .alert-strip {
+      margin: -12px 16px 16px;
+      background: linear-gradient(135deg, #fef2f2, #fff5f5);
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid #fecaca;
+      position: relative;
+      z-index: 2;
+    }
+    .alert-dot {
+      width: 8px; height: 8px;
+      background: var(--danger);
+      border-radius: 50%;
+      flex-shrink: 0;
+      animation: pulse-alert 2s infinite;
+    }
+    @keyframes pulse-alert {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+    .alert-text { font-size: 12px; color: var(--danger); font-weight: 500; flex: 1; }
+    .alert-count {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--danger);
+      background: #fee2e2;
+      padding: 2px 8px;
+      border-radius: 99px;
+    }
+
+    /* ===== CHART PLACEHOLDER ===== */
+    .chart-area {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      height: 80px;
+      padding: 0 4px;
+    }
+    .chart-bar {
+      flex: 1;
+      border-radius: 4px 4px 0 0;
+      transition: height 0.6s ease;
+      position: relative;
+    }
+    .chart-bar::after {
+      content: attr(data-label);
+      position: absolute;
+      bottom: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 8px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* ===== WORKSPACE GRID ===== */
+    .work-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 16px;
+    }
+    .work-card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 16px 12px;
+      border: 1px solid var(--border);
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .work-card:active {
+      transform: scale(0.97);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .work-icon {
+      width: 44px; height: 44px;
+      border-radius: 13px;
+      margin: 0 auto 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .work-icon svg { width: 22px; height: 22px; }
+    .work-card-title { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+    .work-card-count {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ===== MONITOR MAP ===== */
+    .monitor-map {
+      background: linear-gradient(135deg, #e0f2fe, #f0f9ff, #ecfdf5);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      height: 200px;
+      position: relative;
+      overflow: hidden;
+    }
+    .monitor-map::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 0H0v40' fill='none' stroke='%23cbd5e1' stroke-width='.3' opacity='.5'/%3E%3C/svg%3E");
+    }
+    .map-dot {
+      position: absolute;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    }
+    .map-dot-pulse {
+      animation: map-pulse 2s infinite;
+    }
+    @keyframes map-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(220,38,38,0); }
+    }
+    .map-legend {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 8px;
+      padding: 6px 10px;
+      display: flex;
+      gap: 12px;
+      font-size: 9px;
+      color: var(--text-secondary);
+      backdrop-filter: blur(8px);
+    }
+    .map-legend-item { display: flex; align-items: center; gap: 4px; }
+    .map-legend-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+    /* ===== ATTENDANCE ROW ===== */
+    .attend-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #f4f7fa;
+    }
+    .attend-row:last-child { border-bottom: none; }
+    .attend-label { font-size: 12px; color: var(--text-secondary); }
+    .attend-values { display: flex; gap: 12px; font-size: 11px; }
+    .attend-values b { color: var(--text-primary); }
+
+    /* ===== MESSAGE TABS ===== */
+    .msg-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 16px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .msg-tab {
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .msg-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* ===== PROFILE ===== */
+    .profile-header {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 60%, var(--primary-light) 100%);
+      padding: 24px 16px 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    .profile-header::after {
+      content: '';
+      position: absolute;
+      bottom: -40px;
+      right: -30px;
+      width: 140px; height: 140px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.04);
+    }
+    .profile-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: relative;
+      z-index: 1;
+    }
+    .profile-avatar {
+      width: 60px; height: 60px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 24px;
+      font-weight: 700;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .profile-name { color: #fff; font-size: 18px; font-weight: 700; }
+    .profile-role { color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 2px; }
+    .profile-company { color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 4px; }
+
+    .profile-card {
+      margin: -20px 16px 16px;
+      background: var(--card);
+      border-radius: 14px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      text-align: center;
+    }
+    .profile-stat-value {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .profile-stat-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .menu-section { padding: 0 16px; margin-bottom: 16px; }
+    .menu-group {
+      background: var(--card);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid #f4f7fa;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .menu-item:last-child { border-bottom: none; }
+    .menu-item:active { background: #f8fafc; }
+    .menu-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .menu-icon svg { width: 17px; height: 17px; }
+    .menu-text { flex: 1; font-size: 13px; font-weight: 500; color: var(--text-primary); }
+    .menu-arrow { color: var(--text-muted); }
+    .menu-arrow svg { width: 16px; height: 16px; }
+    .menu-extra {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-right: 4px;
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-in {
+      animation: fadeInUp 0.4s ease forwards;
+    }
+    .animate-in:nth-child(1) { animation-delay: 0s; }
+    .animate-in:nth-child(2) { animation-delay: 0.06s; }
+    .animate-in:nth-child(3) { animation-delay: 0.12s; }
+    .animate-in:nth-child(4) { animation-delay: 0.18s; }
+    .animate-in:nth-child(5) { animation-delay: 0.24s; }
+    .animate-in:nth-child(6) { animation-delay: 0.30s; }
+    .animate-in:nth-child(7) { animation-delay: 0.36s; }
+    .animate-in:nth-child(8) { animation-delay: 0.42s; }
+
+    /* ===== EVENT CARD ===== */
+    .event-card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+    .event-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .event-id {
+      font-family: 'DM Sans', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .event-type {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .event-body { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; }
+    .event-meta { display: flex; gap: 12px; font-size: 11px; color: var(--text-muted); }
+    .event-meta-item { display: flex; align-items: center; gap: 3px; }
+    .event-meta-item svg { width: 12px; height: 12px; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 0; height: 0; }
+  </style>
+</head>
+<body>
+
+<!-- ===== PAGE: HOME ===== -->
+<div id="page-home" class="page active">
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span class="status-bar-time">09:41</span>
+    <div class="status-bar-icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+  <!-- Nav -->
+  <div class="nav-bar">
+    <div>
+      <div class="nav-title">智慧环卫云平台</div>
+      <div class="nav-subtitle">海口龙马环卫公司</div>
+    </div>
+    <div class="nav-actions">
+      <button class="nav-btn" onclick="switchTab('messages')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span class="nav-badge">5</span>
+      </button>
+      <button class="nav-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Banner -->
+    <div class="home-banner">
+      <div class="home-banner-top">
+        <div>
+          <div class="home-greeting">今天是个好日子</div>
+          <div class="home-name">管理员，早上好</div>
+        </div>
+        <div class="home-user-avatar">管</div>
+      </div>
+      <div class="home-stats">
+        <div class="home-stat">
+          <div class="home-stat-value">386</div>
+          <div class="home-stat-label">在岗人员</div>
+        </div>
+        <div class="home-stat">
+          <div class="home-stat-value">52</div>
+          <div class="home-stat-label">作业车辆</div>
+        </div>
+        <div class="home-stat">
+          <div class="home-stat-value">365</div>
+          <div class="home-stat-label">运行天数</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert Strip -->
+    <div class="alert-strip" onclick="switchTab('messages')">
+      <div class="alert-dot"></div>
+      <div class="alert-text">3条人员报警 · 5条车辆报警待处理</div>
+      <div class="alert-count">8</div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">快捷功能</div>
+      </div>
+    </div>
+    <div class="quick-actions">
+      <div class="quick-action">
+        <div class="quick-icon" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <span class="quick-label">实时监控</span>
+      </div>
+      <div class="quick-action">
+        <div class="quick-icon" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <span class="quick-label">考勤打卡</span>
+      </div>
+      <div class="quick-action">
+        <div class="quick-icon" style="background:linear-gradient(135deg,#fef2f2,#fee2e2);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <span class="quick-label">报警管理</span>
+      </div>
+      <div class="quick-action">
+        <div class="quick-icon" style="background:linear-gradient(135deg,#f0fdfa,#ccfbf1);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <span class="quick-label">事件上报</span>
+      </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">今日数据</div>
+        <div class="section-more">2026-06-08 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+      </div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-item">
+        <div class="kpi-value" style="color:var(--info)">24.5</div>
+        <div class="kpi-label">作业面积(km²)</div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-value" style="color:var(--accent)">1,287</div>
+        <div class="kpi-label">作业里程(km)</div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-value" style="color:var(--warning)">18</div>
+        <div class="kpi-label">设施总数</div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-value" style="color:var(--success)">47</div>
+        <div class="kpi-label">处理事件</div>
+      </div>
+    </div>
+
+    <!-- Attendance -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">出勤情况</div>
+        <span class="card-badge card-badge-green">今日</span>
+      </div>
+      <div class="card">
+        <div class="attend-row">
+          <span class="attend-label">清扫岗</span>
+          <div class="attend-values">
+            <span>应到 <b>120</b></span>
+            <span>实到 <b style="color:var(--success)">115</b></span>
+            <span>请假 <b style="color:var(--warning)">5</b></span>
+          </div>
+        </div>
+        <div style="margin-bottom:10px">
+          <div class="progress-bar"><div class="progress-fill" style="width:95.8%;background:var(--success)"></div></div>
+        </div>
+        <div class="attend-row">
+          <span class="attend-label">驾驶员</span>
+          <div class="attend-values">
+            <span>应到 <b>45</b></span>
+            <span>实到 <b style="color:var(--success)">43</b></span>
+            <span>请假 <b style="color:var(--warning)">2</b></span>
+          </div>
+        </div>
+        <div style="margin-bottom:10px">
+          <div class="progress-bar"><div class="progress-fill" style="width:95.6%;background:var(--success)"></div></div>
+        </div>
+        <div class="attend-row">
+          <span class="attend-label">督查岗</span>
+          <div class="attend-values">
+            <span>应到 <b>12</b></span>
+            <span>实到 <b style="color:var(--success)">12</b></span>
+            <span>请假 <b style="color:var(--warning)">0</b></span>
+          </div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:100%;background:var(--success)"></div></div>
+      </div>
+    </div>
+
+    <!-- Weekly Chart -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">本周作业里程</div>
+        <div class="section-more">单位: km</div>
+      </div>
+      <div class="card">
+        <div class="chart-area">
+          <div class="chart-bar" style="height:60%;background:linear-gradient(180deg,#3b82f6,#60a5fa);border-radius:4px 4px 0 0" data-label="周一"></div>
+          <div class="chart-bar" style="height:75%;background:linear-gradient(180deg,#3b82f6,#60a5fa);border-radius:4px 4px 0 0" data-label="周二"></div>
+          <div class="chart-bar" style="height:55%;background:linear-gradient(180deg,#3b82f6,#60a5fa);border-radius:4px 4px 0 0" data-label="周三"></div>
+          <div class="chart-bar" style="height:85%;background:linear-gradient(180deg,#3b82f6,#60a5fa);border-radius:4px 4px 0 0" data-label="周四"></div>
+          <div class="chart-bar" style="height:70%;background:linear-gradient(180deg,#3b82f6,#60a5fa);border-radius:4px 4px 0 0" data-label="周五"></div>
+          <div class="chart-bar" style="height:40%;background:linear-gradient(180deg,#93c5fd,#bfdbfe);border-radius:4px 4px 0 0" data-label="周六"></div>
+          <div class="chart-bar" style="height:92%;background:linear-gradient(180deg,var(--primary),var(--primary-light));border-radius:4px 4px 0 0" data-label="今天"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Events -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">最新事件</div>
+        <div class="section-more">查看全部 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+      </div>
+      <div class="event-card">
+        <div class="event-top">
+          <span class="event-id">EVT20260608001</span>
+          <span class="event-type" style="background:#fef2f2;color:var(--danger)">待处理</span>
+        </div>
+        <div class="event-body">路面清洁 · 网格A-01</div>
+        <div class="event-meta">
+          <div class="event-meta-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            张督查
+          </div>
+          <div class="event-meta-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14:20
+          </div>
+          <div class="event-meta-item" style="color:var(--warning)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            剩余 1h 12min
+          </div>
+        </div>
+      </div>
+      <div class="event-card">
+        <div class="event-top">
+          <span class="event-id">EVT20260608002</span>
+          <span class="event-type" style="background:#fef2f2;color:var(--danger)">已超时</span>
+        </div>
+        <div class="event-body">绿化管养 · 网格B-01</div>
+        <div class="event-meta">
+          <div class="event-meta-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            王督查
+          </div>
+          <div class="event-meta-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            11:05
+          </div>
+          <div class="event-meta-item" style="color:var(--danger)">
+            超时 32min
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PAGE: WORKSPACE ===== -->
+<div id="page-workspace" class="page">
+  <div class="status-bar">
+    <span class="status-bar-time">09:41</span>
+    <div class="status-bar-icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+  <div class="nav-bar">
+    <div>
+      <div class="nav-title">工作台</div>
+      <div class="nav-subtitle">环卫作业管理中心</div>
+    </div>
+    <div class="nav-actions">
+      <button class="nav-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Workspace Grid -->
+    <div class="work-grid">
+      <div class="work-card">
+        <div class="work-icon" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div class="work-card-title">班次考勤</div>
+        <div class="work-card-count">4个班次</div>
+      </div>
+      <div class="work-card">
+        <div class="work-icon" style="background:linear-gradient(135deg,#fef2f2,#fee2e2);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="work-card-title">报警管理</div>
+        <div class="work-card-count">8条待处理</div>
+      </div>
+      <div class="work-card">
+        <div class="work-icon" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+        </div>
+        <div class="work-card-title">实时监控</div>
+        <div class="work-card-count">在线170人</div>
+      </div>
+      <div class="work-card">
+        <div class="work-icon" style="background:linear-gradient(135deg,#f0fdfa,#ccfbf1);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        </div>
+        <div class="work-card-title">频道通知</div>
+        <div class="work-card-count">3个频道</div>
+      </div>
+      <div class="work-card">
+        <div class="work-icon" style="background:linear-gradient(135deg,#1e293b,#334155);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        </div>
+        <div class="work-card-title">视频监控</div>
+        <div class="work-card-count">3个摄像头</div>
+      </div>
+      <div class="work-card">
+        <div class="work-icon" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div class="work-card-title">事件管理</div>
+        <div class="work-card-count">47条事件</div>
+      </div>
+    </div>
+
+    <!-- Monitor Map -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">实时位置</div>
+        <div class="section-more">全屏 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+      </div>
+      <div class="monitor-map">
+        <div class="map-dot" style="top:25%;left:20%;background:#16a34a;"></div>
+        <div class="map-dot" style="top:40%;right:25%;background:#16a34a;"></div>
+        <div class="map-dot" style="bottom:30%;left:35%;background:#2563eb;"></div>
+        <div class="map-dot" style="top:55%;left:60%;background:#16a34a;"></div>
+        <div class="map-dot" style="top:30%;left:50%;background:#16a34a;"></div>
+        <div class="map-dot map-dot-pulse" style="top:65%;right:30%;background:#dc2626;"></div>
+        <div class="map-dot" style="bottom:20%;right:20%;background:#2563eb;"></div>
+        <!-- Route lines -->
+        <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;">
+          <line x1="20%" y1="25%" x2="50%" y2="30%" stroke="#3b82f6" stroke-width="2" stroke-dasharray="6,4" opacity="0.5"/>
+          <line x1="35%" y1="70%" x2="60%" y2="55%" stroke="#0d9488" stroke-width="2" stroke-dasharray="6,4" opacity="0.5"/>
+        </svg>
+        <div class="map-legend">
+          <div class="map-legend-item"><div class="map-legend-dot" style="background:#16a34a"></div> 人员</div>
+          <div class="map-legend-item"><div class="map-legend-dot" style="background:#2563eb"></div> 车辆</div>
+          <div class="map-legend-item"><div class="map-legend-dot" style="background:#dc2626"></div> 报警</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Today's Tasks -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">今日待办</div>
+        <div class="section-more" style="color:var(--warning)">8项待处理</div>
+      </div>
+      <div class="card">
+        <div class="list-item">
+          <div class="list-avatar" style="background:linear-gradient(135deg,#fef2f2,#fee2e2);color:var(--danger);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div class="list-content">
+            <div class="list-title">王建国 · 人员滞留报警</div>
+            <div class="list-desc">清扫一部 · 滞留35分钟 · 需立即处理</div>
+          </div>
+          <div class="list-right">
+            <div class="list-tag" style="background:#fef2f2;color:var(--danger)">紧急</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="list-avatar" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);color:var(--warning);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div class="list-content">
+            <div class="list-title">EVT20260608001 · 路面清洁</div>
+            <div class="list-desc">网格A-01 · 剩余1h 12min</div>
+          </div>
+          <div class="list-right">
+            <div class="list-tag" style="background:#fffbeb;color:var(--warning)">进行中</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="list-avatar" style="background:linear-gradient(135deg,#f0fdfa,#ccfbf1);color:var(--accent);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="list-content">
+            <div class="list-title">琼A·33521 · 洒水车作业中</div>
+            <div class="list-desc">滨海大道 · 已作业8.2km</div>
+          </div>
+          <div class="list-right">
+            <div class="list-tag" style="background:#f0fdf4;color:var(--success)">正常</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Operation Stats -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">作业概况</div>
+        <span class="card-badge card-badge-blue">今日</span>
+      </div>
+      <div class="card">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div style="text-align:center;padding:10px;background:#f8fafc;border-radius:10px;">
+            <div style="font-family:'DM Sans';font-size:24px;font-weight:700;color:var(--success)">39</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">已完成事件</div>
+          </div>
+          <div style="text-align:center;padding:10px;background:#f8fafc;border-radius:10px;">
+            <div style="font-family:'DM Sans';font-size:24px;font-weight:700;color:var(--warning)">8</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">待处理事件</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:4px;">
+            <span>处理进度</span>
+            <span style="font-weight:600;color:var(--text-primary)">82.9%</span>
+          </div>
+          <div class="progress-bar" style="height:8px;">
+            <div class="progress-fill" style="width:82.9%;background:linear-gradient(90deg,var(--primary),var(--accent-light))"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PAGE: MESSAGES ===== -->
+<div id="page-messages" class="page">
+  <div class="status-bar">
+    <span class="status-bar-time">09:41</span>
+    <div class="status-bar-icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+  <div class="nav-bar">
+    <div>
+      <div class="nav-title">消息中心</div>
+      <div class="nav-subtitle">报警通知与系统消息</div>
+    </div>
+    <div class="nav-actions">
+      <button class="nav-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Message Tabs -->
+    <div class="msg-tabs">
+      <div class="msg-tab active" onclick="switchMsgTab(this,'msg-all')">全部</div>
+      <div class="msg-tab" onclick="switchMsgTab(this,'msg-alarm')">报警<span style="color:var(--danger);font-weight:700;margin-left:2px">8</span></div>
+      <div class="msg-tab" onclick="switchMsgTab(this,'msg-notify')">通知</div>
+      <div class="msg-tab" onclick="switchMsgTab(this,'msg-channel')">频道</div>
+    </div>
+
+    <!-- All Messages -->
+    <div id="msg-all" style="padding:0 16px;">
+      <!-- Alarm message -->
+      <div class="card" style="margin-bottom:10px;border-left:3px solid var(--danger);">
+        <div class="list-item" style="border:none;padding:0;">
+          <div class="list-avatar" style="background:linear-gradient(135deg,#fef2f2,#fee2e2);color:var(--danger);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div class="list-content">
+            <div class="list-title">人员滞留报警</div>
+            <div class="list-desc">王建国 · 清扫一部 · 滞留35分钟</div>
+          </div>
+          <div class="list-right">
+            <div class="list-time">10:32</div>
+            <div class="list-tag" style="background:#fef2f2;color:var(--danger)">待处理</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:10px;border-left:3px solid var(--danger);">
+        <div class="list-item" style="border:none;padding:0;">
+          <div class="list-avatar" style="background:linear-gradient(135deg,#fef2f2,#fee2e2);color:var(--danger);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="list-content">
+            <div class="list-title">车辆超速报警</div>
+            <div class="list-desc">琼A·88562 · 湿式扫路车 · 时速68km/h</div>
+          </div>
+          <div class="list-right">
+            <div class="list-time">09:47</div>
+            <div class="list-tag" style="background:#fef2f2;color:var(--danger)">待处理</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:10px;border-left:3px solid var(--warning);">
+        <div class="list-item" style="border:none;padding:0;">
+          <div class="list-avatar" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);color:var(--warning);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div class="list-content">
+            <div class="list-title">事件即将超时</div>
+            <div class="list-desc">绿化管养 · 网格B-01 · 剩余18分钟</div>
+          </div>
+          <div class="list-right">
+            <div class="list-time">09:15</div>
+            <div class="list-tag" style="background:#fffbeb;color:var(--warning)">紧急</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:10px;border-left:3px solid var(--success);">
+        <div class="list-item" style="border:none;padding:0;">
+          <div class="list-avatar" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);color:var(--success);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="list-content">
+            <div class="list-title">报警已处理</div>
+            <div class="list-desc">李小明 · 人员脱岗 · 已确认归岗</div>
+          </div>
+          <div class="list-right">
+            <div class="list-time">08:40</div>
+            <div class="list-tag" style="background:#f0fdf4;color:var(--success)">已处理</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:10px;border-left:3px solid var(--info);">
+        <div class="list-item" style="border:none;padding:0;">
+          <div class="list-avatar" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);color:var(--info);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          </div>
+          <div class="list-content">
+            <div class="list-title">频道广播通知</div>
+            <div class="list-desc">清扫一部频道 · 全员集合开早会</div>
+          </div>
+          <div class="list-right">
+            <div class="list-time">07:30</div>
+            <div class="list-tag" style="background:#eff6ff;color:var(--info)">广播</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:10px;border-left:3px solid var(--info);">
+        <div class="list-item" style="border:none;padding:0;">
+          <div class="list-avatar" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);color:var(--info);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          </div>
+          <div class="list-content">
+            <div class="list-title">系统通知</div>
+            <div class="list-desc">夏令时班次调整已生效，请确认排班</div>
+          </div>
+          <div class="list-right">
+            <div class="list-time">昨天</div>
+            <div class="list-tag" style="background:#eff6ff;color:var(--info)">系统</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PAGE: PROFILE ===== -->
+<div id="page-profile" class="page">
+  <div class="status-bar">
+    <span class="status-bar-time">09:41</span>
+    <div class="status-bar-icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="profile-header">
+      <div class="profile-info">
+        <div class="profile-avatar">管</div>
+        <div>
+          <div class="profile-name">管理员</div>
+          <div class="profile-role">系统管理员 · 生产运营部</div>
+          <div class="profile-company">海口龙马环卫公司</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-card">
+      <div>
+        <div class="profile-stat-value">365</div>
+        <div class="profile-stat-label">运行天数</div>
+      </div>
+      <div style="border-left:1px solid var(--border);border-right:1px solid var(--border);">
+        <div class="profile-stat-value">386</div>
+        <div class="profile-stat-label">管理人员</div>
+      </div>
+      <div>
+        <div class="profile-stat-value">52</div>
+        <div class="profile-stat-label">作业车辆</div>
+      </div>
+    </div>
+
+    <!-- Work Modules -->
+    <div class="menu-section">
+      <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;padding-left:4px;">业务模块</div>
+      <div class="menu-group">
+        <div class="menu-item">
+          <div class="menu-icon" style="background:#eff6ff;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+          <span class="menu-text">基础信息</span>
+          <span class="menu-extra">人员/车辆/设备</span>
+          <span class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-icon" style="background:#f0fdfa;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"/></svg>
+          </div>
+          <span class="menu-text">区域管理</span>
+          <span class="menu-extra">路段/网格</span>
+          <span class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-icon" style="background:#f0fdf4;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+          </div>
+          <span class="menu-text">机构管理</span>
+          <span class="menu-extra">组织架构</span>
+          <span class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-icon" style="background:#fffbeb;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <span class="menu-text">报表统计</span>
+          <span class="menu-extra">日报/周报</span>
+          <span class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- System -->
+    <div class="menu-section">
+      <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;padding-left:4px;">系统管理</div>
+      <div class="menu-group">
+        <div class="menu-item">
+          <div class="menu-icon" style="background:#f1f5f9;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          </div>
+          <span class="menu-text">公司管理</span>
+          <span class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-icon" style="background:#f1f5f9;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+          </div>
+          <span class="menu-text">数据分析</span>
+          <span class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="menu-section">
+      <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;padding-left:4px;">设置</div>
+      <div class="menu-group">
+        <div class="menu-item">
+          <div class="menu-icon" style="background:#f1f5f9;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          </div>
+          <span class="menu-text">App设置</span>
+          <span class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-icon" style="background:#f1f5f9;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <span class="menu-text">帮助与反馈</span>
+          <span class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-icon" style="background:#f1f5f9;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </div>
+          <span class="menu-text">关于</span>
+          <span class="menu-extra">v2.4.1</span>
+          <span class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logout -->
+    <div style="padding:8px 16px 24px;">
+      <div style="background:var(--card);border-radius:14px;border:1px solid var(--border);padding:14px;text-align:center;font-size:14px;font-weight:600;color:var(--danger);cursor:pointer;">
+        退出登录
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB BAR ===== -->
+<div class="tab-bar">
+  <div class="tab-item active" onclick="switchTab('home')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>首页</span>
+  </div>
+  <div class="tab-item" onclick="switchTab('workspace')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    <span>工作台</span>
+  </div>
+  <div class="tab-item" onclick="switchTab('messages')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    <span>消息</span>
+    <div class="tab-dot"></div>
+  </div>
+  <div class="tab-item" onclick="switchTab('profile')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span>我的</span>
+  </div>
+</div>
+
+<script>
+const tabMap = {
+  home: 'page-home',
+  workspace: 'page-workspace',
+  messages: 'page-messages',
+  profile: 'page-profile',
+};
+
+function switchTab(key) {
+  // Pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const targetPage = document.getElementById(tabMap[key]);
+  if (targetPage) targetPage.classList.add('active');
+
+  // Tab bar
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  const tabs = document.querySelectorAll('.tab-item');
+  const idx = Object.keys(tabMap).indexOf(key);
+  if (idx >= 0 && tabs[idx]) tabs[idx].classList.add('active');
+
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function switchMsgTab(el, tabId) {
+  el.parentElement.querySelectorAll('.msg-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>

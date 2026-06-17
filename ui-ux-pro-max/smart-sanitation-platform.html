@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智慧环卫云平台</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: { 50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a5f',DEFAULT:'#0F4C81' },
+            accent: { 50:'#f0fdfa',100:'#ccfbf1',200:'#99f6e4',300:'#5eead4',400:'#2dd4bf',500:'#14b8a6',600:'#0d9488',700:'#0f766e',DEFAULT:'#0369A1' },
+            surface: { 50:'#F8FAFC',100:'#f1f5f9',200:'#e2e8f0',300:'#cbd5e1',400:'#94a3b8',DEFAULT:'#F8FAFC' },
+            navy: { 800:'#1e293b',900:'#0f172a',950:'#020617' },
+          },
+          fontFamily: {
+            sans: ['"Noto Sans SC"', '"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            display: ['"Plus Jakarta Sans"', '"Noto Sans SC"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Noto Sans SC', 'Plus Jakarta Sans', system-ui, sans-serif; background:#F8FAFC; color:#0f172a; }
+    ::-webkit-scrollbar { width:6px; height:6px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:3px; }
+    ::-webkit-scrollbar-thumb:hover { background:#94a3b8; }
+
+    .sidebar { width:240px; min-height:100vh; background:linear-gradient(180deg,#0f172a 0%,#1e293b 100%); }
+    .sidebar-item { display:flex; align-items:center; gap:10px; padding:10px 20px; color:#94a3b8; font-size:14px; cursor:pointer; transition:all .2s; border-radius:6px; margin:2px 8px; }
+    .sidebar-item:hover { background:rgba(255,255,255,.08); color:#e2e8f0; }
+    .sidebar-item.active { background:rgba(59,130,246,.2); color:#60a5fa; }
+    .sidebar-group-title { padding:8px 20px 4px; font-size:11px; text-transform:uppercase; color:#475569; letter-spacing:1px; font-weight:600; }
+
+    .stat-card { background:#fff; border-radius:12px; padding:20px; border:1px solid #e2e8f0; transition:all .2s; }
+    .stat-card:hover { box-shadow:0 4px 12px rgba(0,0,0,.06); transform:translateY(-1px); }
+
+    .page { display:none; }
+    .page.active { display:block; }
+
+    .tab-btn { padding:8px 16px; font-size:13px; color:#64748b; border-bottom:2px solid transparent; cursor:pointer; transition:all .2s; white-space:nowrap; }
+    .tab-btn:hover { color:#0f172a; }
+    .tab-btn.active { color:#0F4C81; border-bottom-color:#0F4C81; font-weight:600; }
+
+    .data-table { width:100%; border-collapse:separate; border-spacing:0; }
+    .data-table thead th { background:#f8fafc; padding:10px 14px; font-size:12px; font-weight:600; color:#64748b; text-align:left; border-bottom:1px solid #e2e8f0; white-space:nowrap; }
+    .data-table tbody td { padding:10px 14px; font-size:13px; color:#334155; border-bottom:1px solid #f1f5f9; }
+    .data-table tbody tr:hover { background:#f8fafc; }
+
+    .badge { display:inline-flex; align-items:center; padding:2px 8px; border-radius:9999px; font-size:11px; font-weight:500; }
+    .badge-red { background:#fef2f2; color:#dc2626; }
+    .badge-amber { background:#fffbeb; color:#d97706; }
+    .badge-green { background:#f0fdf4; color:#16a34a; }
+    .badge-blue { background:#eff6ff; color:#2563eb; }
+    .badge-gray { background:#f1f5f9; color:#64748b; }
+
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:6px; font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; border:none; outline:none; }
+    .btn-primary { background:#0F4C81; color:#fff; }
+    .btn-primary:hover { background:#0d3f6b; }
+    .btn-outline { background:#fff; color:#334155; border:1px solid #e2e8f0; }
+    .btn-outline:hover { background:#f8fafc; border-color:#cbd5e1; }
+    .btn-danger { background:#fff; color:#dc2626; border:1px solid #fecaca; }
+    .btn-danger:hover { background:#fef2f2; }
+    .btn-sm { padding:4px 10px; font-size:12px; }
+
+    .search-input { padding:7px 12px 7px 34px; border:1px solid #e2e8f0; border-radius:6px; font-size:13px; outline:none; transition:border-color .2s; background:#fff; }
+    .search-input:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.1); }
+
+    .map-placeholder { background:linear-gradient(135deg,#e0f2fe,#f0f9ff,#ecfdf5); border-radius:12px; border:1px solid #e2e8f0; position:relative; overflow:hidden; }
+    .map-placeholder::before { content:''; position:absolute; inset:0; background:url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0v60M0 30h60' stroke='%23cbd5e1' stroke-width='.5' opacity='.4'/%3E%3C/svg%3E"); }
+
+    .mini-chart { display:flex; align-items:flex-end; gap:2px; height:40px; }
+    .mini-bar { width:6px; border-radius:2px 2px 0 0; transition:height .3s; }
+
+    .org-tree-node { border-left:2px solid #e2e8f0; padding-left:16px; margin-left:12px; }
+    .org-tree-label { display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:13px; color:#334155; transition:background .15s; }
+    .org-tree-label:hover { background:#f1f5f9; }
+    .org-tree-label.active { background:#eff6ff; color:#1d4ed8; font-weight:500; }
+
+    .progress-ring { transform:rotate(-90deg); }
+    .sub-tab { display:none; }
+    .sub-tab.active { display:block; }
+
+    @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .pulse-dot { animation:pulse-dot 2s infinite; }
+
+    .chart-bar { transition:height 0.6s ease; }
+  </style>
+</head>
+<body class="flex">
+
+<!-- ==================== SIDEBAR ==================== -->
+<aside class="sidebar flex flex-col fixed left-0 top-0 bottom-0 z-50">
+  <!-- Logo -->
+  <div class="flex items-center gap-3 px-5 py-5 border-b border-white/10">
+    <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center">
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div>
+      <div class="text-white font-bold text-sm tracking-wide">智慧环卫云平台</div>
+      <div class="text-slate-500 text-[10px]">Smart Sanitation Cloud</div>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="flex-1 overflow-y-auto py-3">
+    <div class="sidebar-group-title">主菜单</div>
+    <div class="sidebar-item active" onclick="switchPage('dashboard')">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="4" rx="1" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="10" width="7" height="11" rx="1" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="13" width="7" height="8" rx="1" stroke="currentColor" stroke-width="1.8"/></svg>
+      数据看板
+    </div>
+
+    <div class="sidebar-group-title" style="margin-top:8px">环卫工作台</div>
+    <div class="sidebar-item" onclick="switchPage('basic-info')">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/></svg>
+      基础信息
+    </div>
+    <div class="sidebar-item" onclick="switchPage('area')">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      区域管理
+    </div>
+    <div class="sidebar-item" onclick="switchPage('operations')">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.8"/></svg>
+      作业中心
+    </div>
+    <div class="sidebar-item" onclick="switchPage('org')">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      机构管理
+    </div>
+    <div class="sidebar-item" onclick="switchPage('reports')">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      报表统计
+    </div>
+
+    <div class="sidebar-group-title" style="margin-top:8px">系统管理</div>
+    <div class="sidebar-item" onclick="switchPage('company')">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="9,22 9,12 15,12 15,22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      公司管理
+    </div>
+    <div class="sidebar-item" onclick="switchPage('analysis')">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      数据分析
+    </div>
+  </nav>
+
+  <!-- User -->
+  <div class="px-4 py-3 border-t border-white/10 flex items-center gap-3">
+    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-teal-400 flex items-center justify-center text-white text-xs font-bold">管</div>
+    <div class="flex-1 min-w-0">
+      <div class="text-white text-xs font-medium truncate">管理员</div>
+      <div class="text-slate-500 text-[10px]">海口龙马公司</div>
+    </div>
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" class="text-slate-500 cursor-pointer"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+</aside>
+
+<!-- ==================== MAIN CONTENT ==================== -->
+<main class="flex-1 ml-[240px] min-h-screen">
+  <!-- Top Bar -->
+  <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <nav class="text-xs text-slate-400">
+        <span>环卫工作台</span>
+        <span class="mx-1">/</span>
+        <span id="breadcrumb-current" class="text-slate-600 font-medium">数据看板</span>
+      </nav>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="relative">
+        <input type="text" placeholder="搜索功能或数据..." class="search-input w-56 text-xs">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="relative cursor-pointer">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" class="text-slate-500"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-bold">5</span>
+      </div>
+      <div class="text-xs text-slate-400">2026-06-08 周一</div>
+    </div>
+  </header>
+
+  <!-- ==================== PAGE 1: DASHBOARD ==================== -->
+  <div id="page-dashboard" class="page active p-6">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-xl font-bold text-navy-900">数据看板</h1>
+        <p class="text-sm text-slate-500 mt-1">项目公司运营数据总览</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <input type="date" value="2026-06-08" class="search-input w-40 text-xs" style="padding-left:12px">
+        <button class="btn btn-primary btn-sm">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          刷新
+        </button>
+      </div>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="grid grid-cols-7 gap-4 mb-6">
+      <div class="stat-card text-center">
+        <div class="text-2xl font-bold text-navy-900">386</div>
+        <div class="text-xs text-slate-500 mt-1">机构人员</div>
+      </div>
+      <div class="stat-card text-center">
+        <div class="text-2xl font-bold text-blue-600">24.5</div>
+        <div class="text-xs text-slate-500 mt-1">作业面积(km²)</div>
+      </div>
+      <div class="stat-card text-center">
+        <div class="text-2xl font-bold text-teal-600">52</div>
+        <div class="text-xs text-slate-500 mt-1">作业车辆</div>
+      </div>
+      <div class="stat-card text-center">
+        <div class="text-2xl font-bold text-emerald-600">1,287</div>
+        <div class="text-xs text-slate-500 mt-1">作业里程(km)</div>
+      </div>
+      <div class="stat-card text-center">
+        <div class="text-2xl font-bold text-amber-600">18</div>
+        <div class="text-xs text-slate-500 mt-1">设施总数</div>
+      </div>
+      <div class="stat-card text-center">
+        <div class="text-2xl font-bold text-red-600">47</div>
+        <div class="text-xs text-slate-500 mt-1">处理事件</div>
+      </div>
+      <div class="stat-card text-center">
+        <div class="text-2xl font-bold text-navy-900">365</div>
+        <div class="text-xs text-slate-500 mt-1">运行天数</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <!-- 出勤情况 -->
+      <div class="stat-card">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-navy-900">出勤情况</h3>
+          <span class="badge badge-green">今日</span>
+        </div>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-500">清扫岗</span>
+            <div class="flex gap-4 text-xs">
+              <span>应到 <b class="text-navy-900">120</b></span>
+              <span>实到 <b class="text-green-600">115</b></span>
+              <span>请假 <b class="text-amber-600">5</b></span>
+            </div>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-2"><div class="bg-green-500 h-2 rounded-full" style="width:95.8%"></div></div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-500">驾驶员</span>
+            <div class="flex gap-4 text-xs">
+              <span>应到 <b class="text-navy-900">45</b></span>
+              <span>实到 <b class="text-green-600">43</b></span>
+              <span>请假 <b class="text-amber-600">2</b></span>
+            </div>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-2"><div class="bg-green-500 h-2 rounded-full" style="width:95.6%"></div></div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-500">督查岗</span>
+            <div class="flex gap-4 text-xs">
+              <span>应到 <b class="text-navy-900">12</b></span>
+              <span>实到 <b class="text-green-600">12</b></span>
+              <span>请假 <b class="text-amber-600">0</b></span>
+            </div>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-2"><div class="bg-green-500 h-2 rounded-full" style="width:100%"></div></div>
+        </div>
+      </div>
+
+      <!-- 作业报警 -->
+      <div class="stat-card">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-navy-900">作业报警</h3>
+          <span class="badge badge-red">今日</span>
+        </div>
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <div class="text-center p-3 bg-red-50 rounded-lg">
+            <div class="text-xl font-bold text-red-600">3</div>
+            <div class="text-[10px] text-slate-500 mt-1">人员报警</div>
+          </div>
+          <div class="text-center p-3 bg-amber-50 rounded-lg">
+            <div class="text-xl font-bold text-amber-600">5</div>
+            <div class="text-[10px] text-slate-500 mt-1">车辆报警</div>
+          </div>
+          <div class="text-center p-3 bg-blue-50 rounded-lg">
+            <div class="text-xl font-bold text-blue-600">1</div>
+            <div class="text-[10px] text-slate-500 mt-1">设施报警</div>
+          </div>
+        </div>
+        <!-- 紧急报警列表 -->
+        <div class="text-xs font-semibold text-slate-600 mb-2">紧急报警</div>
+        <div class="space-y-2">
+          <div class="flex items-center gap-2 p-2 bg-red-50/60 rounded-md">
+            <span class="w-2 h-2 rounded-full bg-red-500 pulse-dot"></span>
+            <span class="text-xs text-red-700 flex-1">车辆超速 - 琼A·88562</span>
+            <span class="text-[10px] text-slate-400">10:32</span>
+          </div>
+          <div class="flex items-center gap-2 p-2 bg-amber-50/60 rounded-md">
+            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+            <span class="text-xs text-amber-700 flex-1">人员滞留 - 张伟(清扫岗)</span>
+            <span class="text-[10px] text-slate-400">09:45</span>
+          </div>
+          <div class="flex items-center gap-2 p-2 bg-amber-50/60 rounded-md">
+            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+            <span class="text-xs text-amber-700 flex-1">设备离线 - 公厕#12</span>
+            <span class="text-[10px] text-slate-400">08:20</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 督办事件 -->
+      <div class="stat-card">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-navy-900">督办事件</h3>
+          <a href="#" class="text-xs text-blue-600 hover:underline">查看全部</a>
+        </div>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg">
+            <div class="flex items-center gap-2">
+              <span class="badge badge-red">待处理</span>
+              <span class="text-xs text-slate-700">道路垃圾堆积</span>
+            </div>
+            <span class="text-[10px] text-slate-400">14:20</span>
+          </div>
+          <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg">
+            <div class="flex items-center gap-2">
+              <span class="badge badge-red">已超时</span>
+              <span class="text-xs text-slate-700">绿化带杂物</span>
+            </div>
+            <span class="text-[10px] text-slate-400">11:05</span>
+          </div>
+          <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg">
+            <div class="flex items-center gap-2">
+              <span class="badge badge-amber">审核中</span>
+              <span class="text-xs text-slate-700">公厕设施损坏</span>
+            </div>
+            <span class="text-[10px] text-slate-400">09:30</span>
+          </div>
+          <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg">
+            <div class="flex items-center gap-2">
+              <span class="badge badge-blue">复核中</span>
+              <span class="text-xs text-slate-700">路面油污未清</span>
+            </div>
+            <span class="text-[10px] text-slate-400">昨日</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <!-- 事件管理 -->
+      <div class="stat-card">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-navy-900">事件管理</h3>
+          <div class="flex gap-2">
+            <span class="badge badge-amber">待处理 8</span>
+            <span class="badge badge-green">已处理 39</span>
+          </div>
+        </div>
+        <div class="mb-3 text-xs text-slate-500">事件数量 TOP 3</div>
+        <div class="flex gap-4 mb-4">
+          <div class="flex-1 text-center p-2 bg-blue-50 rounded-lg">
+            <div class="text-lg font-bold text-blue-700">15</div>
+            <div class="text-[10px] text-slate-500">路面清洁</div>
+          </div>
+          <div class="flex-1 text-center p-2 bg-teal-50 rounded-lg">
+            <div class="text-lg font-bold text-teal-700">11</div>
+            <div class="text-[10px] text-slate-500">垃圾清运</div>
+          </div>
+          <div class="flex-1 text-center p-2 bg-amber-50 rounded-lg">
+            <div class="text-lg font-bold text-amber-700">7</div>
+            <div class="text-[10px] text-slate-500">绿化管养</div>
+          </div>
+        </div>
+        <div class="text-xs text-slate-500 mb-2">近7天已处理事件</div>
+        <div class="flex items-end gap-1 h-24 px-2">
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <div class="w-full bg-blue-400 rounded-t chart-bar" style="height:60%"></div>
+            <span class="text-[9px] text-slate-400">6/2</span>
+          </div>
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <div class="w-full bg-blue-400 rounded-t chart-bar" style="height:75%"></div>
+            <span class="text-[9px] text-slate-400">6/3</span>
+          </div>
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <div class="w-full bg-blue-400 rounded-t chart-bar" style="height:50%"></div>
+            <span class="text-[9px] text-slate-400">6/4</span>
+          </div>
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <div class="w-full bg-blue-400 rounded-t chart-bar" style="height:90%"></div>
+            <span class="text-[9px] text-slate-400">6/5</span>
+          </div>
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <div class="w-full bg-blue-400 rounded-t chart-bar" style="height:65%"></div>
+            <span class="text-[9px] text-slate-400">6/6</span>
+          </div>
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <div class="w-full bg-blue-400 rounded-t chart-bar" style="height:80%"></div>
+            <span class="text-[9px] text-slate-400">6/7</span>
+          </div>
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <div class="w-full bg-blue-500 rounded-t chart-bar" style="height:55%"></div>
+            <span class="text-[9px] text-blue-600 font-medium">6/8</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 实时地图 -->
+      <div class="stat-card p-0 overflow-hidden">
+        <div class="flex items-center justify-between p-4 pb-2">
+          <h3 class="text-sm font-semibold text-navy-900">实时监控地图</h3>
+          <div class="flex gap-2 text-[10px]">
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span>在线 326</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-300"></span>离线 60</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500 pulse-dot"></span>报警 9</span>
+          </div>
+        </div>
+        <div class="map-placeholder h-[220px] mx-4 mb-4 flex items-center justify-center">
+          <div class="relative z-10 text-center">
+            <svg width="40" height="40" fill="none" viewBox="0 0 24 24" class="mx-auto text-slate-400 mb-2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/></svg>
+            <div class="text-xs text-slate-500">地图区域</div>
+            <div class="text-[10px] text-slate-400">人员/车辆/设施实时定位</div>
+          </div>
+          <!-- Simulated dots -->
+          <div class="absolute top-8 left-12 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
+          <div class="absolute top-16 right-20 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
+          <div class="absolute bottom-12 left-1/3 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-sm"></div>
+          <div class="absolute top-20 left-1/2 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm pulse-dot"></div>
+          <div class="absolute bottom-16 right-1/4 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
+          <div class="absolute top-10 right-12 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-sm"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 2: BASIC INFO ==================== -->
+  <div id="page-basic-info" class="page p-6">
+    <div class="mb-6">
+      <h1 class="text-xl font-bold text-navy-900">基础信息</h1>
+      <p class="text-sm text-slate-500 mt-1">管理分公司人员、车辆、设备等基础数据</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex border-b border-slate-200 mb-6 overflow-x-auto">
+      <div class="tab-btn active" onclick="switchSubTab(this,'basic-tab-posts')">岗位管理</div>
+      <div class="tab-btn" onclick="switchSubTab(this,'basic-tab-app')">App授权</div>
+      <div class="tab-btn" onclick="switchSubTab(this,'basic-tab-device')">设备分配</div>
+      <div class="tab-btn" onclick="switchSubTab(this,'basic-tab-staff')">人员调度</div>
+      <div class="tab-btn" onclick="switchSubTab(this,'basic-tab-vehicle')">车辆调度</div>
+      <div class="tab-btn" onclick="switchSubTab(this,'basic-tab-branch')">分公司专属员工</div>
+    </div>
+
+    <!-- 岗位管理 -->
+    <div id="basic-tab-posts" class="sub-tab active">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <input type="text" placeholder="搜索岗位名称" class="search-input w-48 text-xs">
+          <button class="btn btn-outline btn-sm">查询</button>
+          <button class="btn btn-outline btn-sm">清空</button>
+        </div>
+        <button class="btn btn-primary btn-sm">
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+          添加岗位
+        </button>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <table class="data-table">
+          <thead>
+            <tr><th>督查名称</th><th>岗位描述</th><th>状态</th><th>创建日期</th><th>操作</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="font-medium">路面巡查岗</td><td class="text-slate-500">负责城区主要路面清洁质量检查</td><td><span class="badge badge-green">启用</span></td><td>2024-03-15</td><td class="flex gap-2"><button class="btn btn-outline btn-sm">修改</button><button class="btn btn-outline btn-sm">选择用户</button><button class="btn btn-danger btn-sm">删除</button></td></tr>
+            <tr><td class="font-medium">绿化督查岗</td><td class="text-slate-500">绿化带养护质量监督</td><td><span class="badge badge-green">启用</span></td><td>2024-03-18</td><td class="flex gap-2"><button class="btn btn-outline btn-sm">修改</button><button class="btn btn-outline btn-sm">选择用户</button><button class="btn btn-danger btn-sm">删除</button></td></tr>
+            <tr><td class="font-medium">公厕督查岗</td><td class="text-slate-500">公厕卫生及设施运行检查</td><td><span class="badge badge-green">启用</span></td><td>2024-04-01</td><td class="flex gap-2"><button class="btn btn-outline btn-sm">修改</button><button class="btn btn-outline btn-sm">选择用户</button><button class="btn btn-danger btn-sm">删除</button></td></tr>
+            <tr><td class="font-medium">车辆作业督查</td><td class="text-slate-500">车辆作业路线及油耗监督</td><td><span class="badge badge-gray">停用</span></td><td>2024-05-10</td><td class="flex gap-2"><button class="btn btn-outline btn-sm">修改</button><button class="btn btn-outline btn-sm">选择用户</button><button class="btn btn-danger btn-sm">删除</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- App授权 -->
+    <div id="basic-tab-app" class="sub-tab">
+      <div class="flex gap-4">
+        <!-- Org Tree -->
+        <div class="w-56 bg-white rounded-xl border border-slate-200 p-4 flex-shrink-0">
+          <div class="text-xs font-semibold text-slate-600 mb-3">组织机构</div>
+          <div class="space-y-1 text-xs">
+            <div class="org-tree-label font-medium">海口龙马环卫</div>
+            <div class="org-tree-node">
+              <div class="org-tree-label active">清扫一部</div>
+              <div class="org-tree-label">清扫二部</div>
+              <div class="org-tree-label">转运部</div>
+              <div class="org-tree-label">机械作业部</div>
+              <div class="org-tree-label">绿化部</div>
+            </div>
+          </div>
+        </div>
+        <!-- Employee list -->
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-4">
+            <input type="text" placeholder="搜索员工姓名" class="search-input w-44 text-xs">
+            <button class="btn btn-outline btn-sm">查询</button>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <table class="data-table">
+              <thead><tr><th>员工姓名</th><th>性别</th><th>手机号码</th><th>职位大类</th><th>职位中类</th><th>职位小类</th><th>操作</th></tr></thead>
+              <tbody>
+                <tr><td>王建国</td><td>男</td><td>138****5521</td><td>一线人员</td><td>清扫岗</td><td>普扫员</td><td><button class="btn btn-primary btn-sm">授权</button></td></tr>
+                <tr><td>李美兰</td><td>女</td><td>139****3387</td><td>一线人员</td><td>清扫岗</td><td>普扫员</td><td><button class="btn btn-primary btn-sm">授权</button></td></tr>
+                <tr><td>陈志强</td><td>男</td><td>136****7742</td><td>驾驶员</td><td>机扫车</td><td>司机</td><td class="flex gap-2"><button class="btn btn-outline btn-sm">修改授权</button><button class="btn btn-danger btn-sm">取消授权</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 设备分配 -->
+    <div id="basic-tab-device" class="sub-tab">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <select class="search-input text-xs w-32" style="padding-left:12px"><option>设备类型</option><option>GPS定位器</option><option>摄像头</option><option>传感器</option></select>
+          <select class="search-input text-xs w-32" style="padding-left:12px"><option>归属状态</option><option>已分配</option><option>未分配</option></select>
+          <input type="text" placeholder="设备名称" class="search-input w-36 text-xs">
+          <button class="btn btn-outline btn-sm">查询</button>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <table class="data-table">
+          <thead><tr><th>设备名称</th><th>IMEI</th><th>产权公司</th><th>设备类型</th><th>设备型号</th><th>归属状态</th><th>归属对象</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>GPS定位器-001</td><td>860123456789012</td><td>海口龙马</td><td>GPS定位器</td><td>GT06N</td><td><span class="badge badge-green">已分配(人员)</span></td><td>王建国</td><td class="flex gap-2"><button class="btn btn-outline btn-sm">分配人员</button><button class="btn btn-outline btn-sm">分配车辆</button></td></tr>
+            <tr><td>GPS定位器-002</td><td>860123456789029</td><td>海口龙马</td><td>GPS定位器</td><td>GT06N</td><td><span class="badge badge-green">已分配(车辆)</span></td><td>琼A·33521</td><td class="flex gap-2"><button class="btn btn-outline btn-sm">分配人员</button><button class="btn btn-outline btn-sm">分配车辆</button></td></tr>
+            <tr><td>油耗传感器-01</td><td>860123456789036</td><td>海口龙马</td><td>传感器</td><td>FLOW-100</td><td><span class="badge badge-gray">未分配</span></td><td>--</td><td class="flex gap-2"><button class="btn btn-outline btn-sm">分配人员</button><button class="btn btn-outline btn-sm">分配车辆</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 人员调度 -->
+    <div id="basic-tab-staff" class="sub-tab">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <input type="text" placeholder="姓名" class="search-input w-32 text-xs">
+          <input type="text" placeholder="手机号" class="search-input w-36 text-xs">
+          <select class="search-input text-xs w-28" style="padding-left:12px"><option>绑定状态</option><option>已绑定</option><option>未绑定</option></select>
+          <button class="btn btn-outline btn-sm">查询</button>
+          <button class="btn btn-outline btn-sm">清空</button>
+        </div>
+        <button class="btn btn-primary btn-sm">批量绑定</button>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <table class="data-table">
+          <thead><tr><th><input type="checkbox"></th><th>姓名</th><th>性别</th><th>联系电话</th><th>身份证号</th><th>职位大类</th><th>入职时间</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td><input type="checkbox"></td><td>刘小明</td><td>男</td><td>138****2210</td><td>4601**********1234</td><td>一线人员</td><td>2024-01-15</td><td><span class="badge badge-green">已绑定</span></td><td><button class="btn btn-outline btn-sm">解绑</button></td></tr>
+            <tr><td><input type="checkbox"></td><td>周丽华</td><td>女</td><td>137****5580</td><td>4601**********5678</td><td>一线人员</td><td>2024-02-20</td><td><span class="badge badge-gray">未绑定</span></td><td><button class="btn btn-primary btn-sm">绑定至分公司</button></td></tr>
+            <tr><td><input type="checkbox"></td><td>黄大伟</td><td>男</td><td>135****7793</td><td>4601**********9012</td><td>驾驶员</td><td>2023-11-08</td><td><span class="badge badge-green">已绑定</span></td><td><button class="btn btn-outline btn-sm">解绑</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 车辆调度 -->
+    <div id="basic-tab-vehicle" class="sub-tab">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <input type="text" placeholder="车牌号" class="search-input w-32 text-xs">
+          <select class="search-input text-xs w-28" style="padding-left:12px"><option>车辆类型</option><option>洒水车</option><option>机扫车</option><option>垃圾车</option></select>
+          <select class="search-input text-xs w-28" style="padding-left:12px"><option>绑定状态</option><option>已绑定</option><option>未绑定</option></select>
+          <button class="btn btn-outline btn-sm">查询</button>
+        </div>
+        <button class="btn btn-primary btn-sm">批量绑定</button>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <table class="data-table">
+          <thead><tr><th>车牌号</th><th>车辆名称</th><th>车辆类型</th><th>车辆型号</th><th>车辆品牌</th><th>绑定状态</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>琼A·33521</td><td>大型洒水车</td><td>洒水车</td><td>ZZ5160GSS</td><td>中国重汽</td><td><span class="badge badge-green">已绑定</span></td><td><button class="btn btn-outline btn-sm">解绑</button></td></tr>
+            <tr><td>琼A·88562</td><td>湿式扫路车</td><td>机扫车</td><td>SDL5160</td><td>中联重科</td><td><span class="badge badge-green">已绑定</span></td><td><button class="btn btn-outline btn-sm">解绑</button></td></tr>
+            <tr><td>琼A·22410</td><td>压缩垃圾车</td><td>垃圾车</td><td>CL5160Z</td><td>程力威</td><td><span class="badge badge-gray">未绑定</span></td><td><button class="btn btn-primary btn-sm">绑定</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 分公司专属员工 -->
+    <div id="basic-tab-branch" class="sub-tab">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <input type="text" placeholder="员工姓名" class="search-input w-32 text-xs">
+          <input type="text" placeholder="联系电话" class="search-input w-36 text-xs">
+          <button class="btn btn-outline btn-sm">查询</button>
+          <button class="btn btn-outline btn-sm">重置</button>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn btn-primary btn-sm">新建员工</button>
+          <button class="btn btn-outline btn-sm">导入</button>
+          <button class="btn btn-outline btn-sm">绑定</button>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <table class="data-table">
+          <thead><tr><th>所属机构</th><th>员工姓名</th><th>性别</th><th>职位大类</th><th>App授权</th><th>联系电话</th><th>身份证号</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>清扫一部</td><td>赵明</td><td>男</td><td>一线人员/清扫岗/普扫员</td><td><span class="badge badge-green">已授权</span></td><td>138****9901</td><td>4601**********3456</td><td class="flex gap-2"><button class="btn btn-outline btn-sm">编辑</button><button class="btn btn-danger btn-sm">解绑</button></td></tr>
+            <tr><td>机械作业部</td><td>林海</td><td>男</td><td>驾驶员/机扫车/司机</td><td><span class="badge badge-green">已授权</span></td><td>139****2256</td><td>4601**********7890</td><td class="flex gap-2"><button class="btn btn-outline btn-sm">编辑</button><button class="btn btn-danger btn-sm">解绑</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 3: AREA MANAGEMENT ==================== -->
+  <div id="page-area" class="page p-6">
+    <div class="mb-6">
+      <h1 class="text-xl font-bold text-navy-900">区域管理</h1>
+      <p class="text-sm text-slate-500 mt-1">管理作业路段、路线和网格区域</p>
+    </div>
+    <div class="flex border-b border-slate-200 mb-6">
+      <div class="tab-btn active" onclick="switchSubTab(this,'area-tab-road')">路段路线管理</div>
+      <div class="tab-btn" onclick="switchSubTab(this,'area-tab-grid')">网格管理</div>
+    </div>
+
+    <!-- 路段路线管理 -->
+    <div id="area-tab-road" class="sub-tab active">
+      <div class="grid grid-cols-5 gap-4">
+        <!-- Left: Table -->
+        <div class="col-span-2">
+          <div class="flex items-center gap-2 mb-3">
+            <input type="text" placeholder="搜索路段/路线" class="search-input flex-1 text-xs">
+            <button class="btn btn-primary btn-sm">添加路段</button>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <table class="data-table">
+              <thead><tr><th>路段名称</th><th>路线长度</th><th>类型</th><th>状态</th></tr></thead>
+              <tbody>
+                <tr class="bg-blue-50/50"><td class="font-medium text-blue-700">滨海大道</td><td>12.5km</td><td>主干道</td><td><span class="badge badge-green">启用</span></td></tr>
+                <tr><td class="font-medium">国兴大道</td><td>8.3km</td><td>主干道</td><td><span class="badge badge-green">启用</span></td></tr>
+                <tr><td class="font-medium">龙昆北路</td><td>5.1km</td><td>次干道</td><td><span class="badge badge-green">启用</span></td></tr>
+                <tr><td class="font-medium">海府路</td><td>6.7km</td><td>次干道</td><td><span class="badge badge-green">启用</span></td></tr>
+                <tr><td class="font-medium">琼州大道</td><td>4.2km</td><td>支路</td><td><span class="badge badge-green">启用</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <!-- Right: Map -->
+        <div class="col-span-3">
+          <div class="map-placeholder h-[420px] flex items-center justify-center">
+            <div class="relative z-10 text-center">
+              <svg width="48" height="48" fill="none" viewBox="0 0 24 24" class="mx-auto text-slate-400 mb-2"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="2" x2="8" y2="18" stroke="currentColor" stroke-width="1.5"/><line x1="16" y1="6" x2="16" y2="22" stroke="currentColor" stroke-width="1.5"/></svg>
+              <div class="text-sm text-slate-600 font-medium">路段路线地图</div>
+              <div class="text-xs text-slate-400 mt-1">在地图上绘制和管理作业路段</div>
+            </div>
+            <!-- Simulated route lines -->
+            <svg class="absolute inset-0 w-full h-full z-[5]" style="pointer-events:none">
+              <line x1="15%" y1="25%" x2="65%" y2="30%" stroke="#3b82f6" stroke-width="3" stroke-dasharray="8,4" opacity="0.6"/>
+              <line x1="30%" y1="50%" x2="75%" y2="55%" stroke="#0d9488" stroke-width="2" stroke-dasharray="6,4" opacity="0.5"/>
+              <line x1="20%" y1="70%" x2="55%" y2="80%" stroke="#3b82f6" stroke-width="2" stroke-dasharray="6,4" opacity="0.5"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 网格管理 -->
+    <div id="area-tab-grid" class="sub-tab">
+      <div class="grid grid-cols-5 gap-4">
+        <div class="col-span-2">
+          <div class="flex items-center gap-2 mb-3">
+            <input type="text" placeholder="搜索网格" class="search-input flex-1 text-xs">
+            <button class="btn btn-primary btn-sm">新建网格</button>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <table class="data-table">
+              <thead><tr><th>网格名称</th><th>负责人</th><th>面积</th><th>状态</th></tr></thead>
+              <tbody>
+                <tr class="bg-blue-50/50"><td class="font-medium text-blue-700">网格A-01</td><td>张队长</td><td>3.2km²</td><td><span class="badge badge-green">启用</span></td></tr>
+                <tr><td class="font-medium">网格A-02</td><td>李队长</td><td>2.8km²</td><td><span class="badge badge-green">启用</span></td></tr>
+                <tr><td class="font-medium">网格B-01</td><td>王队长</td><td>4.1km²</td><td><span class="badge badge-green">启用</span></td></tr>
+                <tr><td class="font-medium">网格B-02</td><td>赵队长</td><td>3.5km²</td><td><span class="badge badge-green">启用</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="col-span-3">
+          <div class="map-placeholder h-[420px] flex items-center justify-center">
+            <div class="relative z-10 text-center">
+              <svg width="48" height="48" fill="none" viewBox="0 0 24 24" class="mx-auto text-slate-400 mb-2"><rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+              <div class="text-sm text-slate-600 font-medium">网格区域地图</div>
+              <div class="text-xs text-slate-400 mt-1">在地图上绘制和管理作业网格</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 4: OPERATIONS CENTER ==================== -->
+  <div id="page-operations" class="page p-6">
+    <div class="mb-6">
+      <h1 class="text-xl font-bold text-navy-900">作业中心</h1>
+      <p class="text-sm text-slate-500 mt-1">考勤、监控、报警、事件等作业管理核心功能</p>
+    </div>
+    <div class="flex border-b border-slate-200 mb-6 overflow-x-auto">
+      <div class="tab-btn active" onclick="switchSubTab(this,'ops-tab-attendance')">班次考勤</div>
+      <div class="tab-btn" onclick="switchSubTab(this,'ops-tab-alarm')">报警管理</div>
+      <div class="tab-btn" onclick="switchSubTab(this,'ops-tab-monitor')">实时监控</div>
+      <div class="tab-btn" onclick="switchSubTab(this,'ops-tab-channel')">频道通知</div>
+      <div class="tab-btn" onclick="switchSubTab(this,'ops-tab-video')">视频监控</div>
+      <div class="tab-btn" onclick="switchSubTab(this,'ops-tab-event')">事件管理</div>
+    </div>
+
+    <!-- 班次考勤 -->
+    <div id="ops-tab-attendance" class="sub-tab active">
+      <div class="flex border-b border-slate-100 mb-4 gap-4">
+        <div class="tab-btn active text-xs" style="padding:6px 0">班次管理</div>
+        <div class="tab-btn text-xs" style="padding:6px 0">考勤组管理</div>
+        <div class="tab-btn text-xs" style="padding:6px 0">考勤排班</div>
+        <div class="tab-btn text-xs" style="padding:6px 0">请假管理</div>
+      </div>
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <input type="text" placeholder="班次名称" class="search-input w-40 text-xs">
+          <button class="btn btn-outline btn-sm">查询</button>
+          <button class="btn btn-outline btn-sm">清空</button>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn btn-outline btn-sm">设置夏冬时令</button>
+          <button class="btn btn-primary btn-sm">添加班次</button>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <table class="data-table">
+          <thead><tr><th>班次名称</th><th>考勤时间段</th><th>创建人</th><th>备注</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium">早班</td><td>06:00 - 12:00</td><td>管理员</td><td>夏季通用</td><td class="flex gap-2"><button class="btn btn-outline btn-sm">修改</button><button class="btn btn-danger btn-sm">删除</button></td></tr>
+            <tr><td class="font-medium">午班</td><td>12:00 - 18:00</td><td>管理员</td><td></td><td class="flex gap-2"><button class="btn btn-outline btn-sm">修改</button><button class="btn btn-danger btn-sm">删除</button></td></tr>
+            <tr><td class="font-medium">晚班</td><td>18:00 - 23:00</td><td>管理员</td><td></td><td class="flex gap-2"><button class="btn btn-outline btn-sm">修改</button><button class="btn btn-danger btn-sm">删除</button></td></tr>
+            <tr><td class="font-medium">全天班</td><td>06:00 - 18:00</td><td>管理员</td><td>含午休2h</td><td class="flex gap-2"><button class="btn btn-outline btn-sm">修改</button><button class="btn btn-danger btn-sm">删除</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 报警管理 -->
+    <div id="ops-tab-alarm" class="sub-tab">
+      <div class="flex border-b border-slate-100 mb-4 gap-4">
+        <div class="tab-btn active text-xs" style="padding:6px 0">人员报警</div>
+        <div class="tab-btn text-xs" style="padding:6px 0">车辆报警</div>
+        <div class="tab-btn text-xs" style="padding:6px 0">设施报警</div>
+      </div>
+      <div class="flex items-center gap-2 mb-4">
+        <select class="search-input text-xs w-28" style="padding-left:12px"><option>报警类型</option><option>滞留报警</option><option>脱岗报警</option><option>超速报警</option></select>
+        <input type="date" value="2026-06-08" class="search-input w-36 text-xs" style="padding-left:12px">
+        <span class="text-xs text-slate-400">至</span>
+        <input type="date" value="2026-06-08" class="search-input w-36 text-xs" style="padding-left:12px">
+        <button class="btn btn-outline btn-sm">查询</button>
+        <button class="btn btn-outline btn-sm">导出</button>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <table class="data-table">
+          <thead><tr><th>报警时间</th><th>报警类型</th><th>姓名</th><th>岗位</th><th>所属部门</th><th>持续时长</th><th>处理状态</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>10:32</td><td><span class="badge badge-red">人员滞留</span></td><td>王建国</td><td>清扫岗</td><td>清扫一部</td><td>35分钟</td><td><span class="badge badge-amber">待处理</span></td><td><button class="btn btn-outline btn-sm">标记</button></td></tr>
+            <tr><td>09:15</td><td><span class="badge badge-red">人员脱岗</span></td><td>李小明</td><td>清扫岗</td><td>清扫二部</td><td>22分钟</td><td><span class="badge badge-green">已处理</span></td><td><button class="btn btn-outline btn-sm">查看</button></td></tr>
+            <tr><td>08:40</td><td><span class="badge badge-amber">处理超时</span></td><td>张伟</td><td>督查岗</td><td>质检部</td><td>15分钟</td><td><span class="badge badge-green">已处理</span></td><td><button class="btn btn-outline btn-sm">查看</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 实时监控 -->
+    <div id="ops-tab-monitor" class="sub-tab">
+      <div class="flex border-b border-slate-100 mb-4 gap-4">
+        <div class="tab-btn active text-xs" style="padding:6px 0">实时动态</div>
+        <div class="tab-btn text-xs" style="padding:6px 0">实况检索</div>
+        <div class="tab-btn text-xs" style="padding:6px 0">作业完成率</div>
+      </div>
+      <!-- Stats -->
+      <div class="grid grid-cols-5 gap-3 mb-4">
+        <div class="stat-card text-center py-3"><div class="text-xl font-bold text-blue-600">47</div><div class="text-[10px] text-slate-500">事件总数</div></div>
+        <div class="stat-card text-center py-3"><div class="text-xl font-bold text-amber-600">8</div><div class="text-[10px] text-slate-500">待处理</div></div>
+        <div class="stat-card text-center py-3"><div class="text-xl font-bold text-green-600">39</div><div class="text-[10px] text-slate-500">已完成</div></div>
+        <div class="stat-card text-center py-3"><div class="text-xl font-bold text-red-600">3</div><div class="text-[10px] text-slate-500">人员报警</div></div>
+        <div class="stat-card text-center py-3"><div class="text-xl font-bold text-red-600">5</div><div class="text-[10px] text-slate-500">车辆报警</div></div>
+      </div>
+      <!-- Map + Sidebar -->
+      <div class="grid grid-cols-4 gap-4">
+        <div class="col-span-3 map-placeholder h-[340px] flex items-center justify-center">
+          <div class="relative z-10 text-center">
+            <div class="text-sm text-slate-600 font-medium">实时监控地图</div>
+            <div class="text-xs text-slate-400 mt-1">人员/车辆/设施实时动态位置</div>
+          </div>
+          <div class="absolute top-8 left-12 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
+          <div class="absolute top-16 right-20 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
+          <div class="absolute bottom-12 left-1/3 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-sm"></div>
+          <div class="absolute top-24 left-1/2 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm pulse-dot"></div>
+          <!-- Toolbar -->
+          <div class="absolute right-3 top-3 z-10 bg-white/90 rounded-lg shadow p-1.5 flex flex-col gap-1">
+            <button class="w-7 h-7 rounded flex items-center justify-center text-slate-500 hover:bg-slate-100 text-xs" title="人员">P</button>
+            <button class="w-7 h-7 rounded flex items-center justify-center text-slate-500 hover:bg-slate-100 text-xs" title="车辆">V</button>
+            <button class="w-7 h-7 rounded flex items-center justify-center text-slate-500 hover:bg-slate-100 text-xs" title="设施">F</button>
+          </div>
+        </div>
+        <!-- Side list -->
+        <div class="bg-white rounded-xl border border-slate-200 p-3 overflow-y-auto" style="max-height:340px">
+          <div class="text-xs font-semibold text-slate-600 mb-2">监控事项</div>
+          <div class="space-y-2">
+            <div class="p-2 bg-red-50 rounded-lg cursor-pointer hover:bg-red-100 transition">
+              <div class="flex items-center gap-2 mb-1"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span><span class="text-xs font-medium text-red-700">报警</span></div>
+              <div class="text-[11px] text-slate-600">张伟 · 督查岗 · 滞留35分钟</div>
+            </div>
+            <div class="p-2 bg-amber-50 rounded-lg cursor-pointer hover:bg-amber-100 transition">
+              <div class="flex items-center gap-2 mb-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span><span class="text-xs font-medium text-amber-700">事件</span></div>
+              <div class="text-[11px] text-slate-600">道路垃圾 · 待处理 · 20分钟</div>
+            </div>
+            <div class="p-2 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition">
+              <div class="flex items-center gap-2 mb-1"><span class="w-1.5 h-1.5 rounded-full bg-green-500"></span><span class="text-xs font-medium text-slate-700">在线</span></div>
+              <div class="text-[11px] text-slate-600">琼A·33521 · 洒水车 · 作业中</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 频道通知 -->
+    <div id="ops-tab-channel" class="sub-tab">
+      <div class="flex border-b border-slate-100 mb-4 gap-4">
+        <div class="tab-btn active text-xs" style="padding:6px 0">频道广播</div>
+        <div class="tab-btn text-xs" style="padding:6px 0">频道管理</div>
+      </div>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="col-span-2">
+          <div class="flex items-center gap-2 mb-4">
+            <button class="btn btn-primary btn-sm">新建频道</button>
+            <button class="btn btn-outline btn-sm">发送广播</button>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <table class="data-table">
+              <thead><tr><th>频道名称</th><th>成员数</th><th>创建时间</th><th>状态</th><th>操作</th></tr></thead>
+              <tbody>
+                <tr><td class="font-medium">清扫一部频道</td><td>45</td><td>2024-03-15</td><td><span class="badge badge-green">活跃</span></td><td class="flex gap-2"><button class="btn btn-outline btn-sm">管理</button><button class="btn btn-outline btn-sm">广播</button></td></tr>
+                <tr><td class="font-medium">机械作业频道</td><td>28</td><td>2024-03-20</td><td><span class="badge badge-green">活跃</span></td><td class="flex gap-2"><button class="btn btn-outline btn-sm">管理</button><button class="btn btn-outline btn-sm">广播</button></td></tr>
+                <tr><td class="font-medium">应急指挥频道</td><td>12</td><td>2024-05-01</td><td><span class="badge badge-gray">静默</span></td><td class="flex gap-2"><button class="btn btn-outline btn-sm">管理</button><button class="btn btn-outline btn-sm">广播</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-4">
+          <div class="text-xs font-semibold text-slate-600 mb-3">频道详情 - 清扫一部频道</div>
+          <div class="space-y-3 text-xs">
+            <div><span class="text-slate-400">频道名称：</span><span class="text-slate-700">清扫一部频道</span></div>
+            <div><span class="text-slate-400">创建人：</span><span class="text-slate-700">管理员</span></div>
+            <div><span class="text-slate-400">成员数：</span><span class="text-slate-700">45人</span></div>
+            <div><span class="text-slate-400">频道监听：</span><span class="badge badge-green">开启</span></div>
+            <div><span class="text-slate-400">自动收听：</span><span class="badge badge-green">开启</span></div>
+            <div class="pt-2 border-t border-slate-100"><span class="text-slate-400">备注：</span><span class="text-slate-700">清扫一部日常通讯</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 视频监控 -->
+    <div id="ops-tab-video" class="sub-tab">
+      <div class="grid grid-cols-3 gap-4">
+        <div class="bg-navy-900 rounded-xl overflow-hidden aspect-video flex items-center justify-center relative">
+          <div class="text-center"><div class="text-white/60 text-xs">公厕 #01 - 入口</div><div class="text-white/30 text-[10px] mt-1">实时画面</div></div>
+          <div class="absolute top-2 right-2 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-red-500 pulse-dot"></span><span class="text-[9px] text-white/60">LIVE</span></div>
+        </div>
+        <div class="bg-navy-900 rounded-xl overflow-hidden aspect-video flex items-center justify-center relative">
+          <div class="text-center"><div class="text-white/60 text-xs">中转站 #03 - 卸料区</div><div class="text-white/30 text-[10px] mt-1">实时画面</div></div>
+          <div class="absolute top-2 right-2 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-red-500 pulse-dot"></span><span class="text-[9px] text-white/60">LIVE</span></div>
+        </div>
+        <div class="bg-navy-900 rounded-xl overflow-hidden aspect-video flex items-center justify-center relative">
+          <div class="text-center"><div class="text-white/60 text-xs">公厕 #05 - 内部</div><div class="text-white/30 text-[10px] mt-1">离线</div></div>
+          <div class="absolute top-2 right-2 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span><span class="text-[9px] text-white/40">OFFLINE</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 事件管理 -->
+    <div id="ops-tab-event" class="sub-tab">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <input type="text" placeholder="事件编号" class="search-input w-32 text-xs">
+          <select class="search-input text-xs w-28" style="padding-left:12px"><option>事件项目</option><option>路面清洁</option><option>垃圾清运</option><option>绿化管养</option></select>
+          <select class="search-input text-xs w-28" style="padding-left:12px"><option>事件状态</option><option>待处理</option><option>已超时</option><option>已处理</option><option>已撤销</option></select>
+          <input type="date" value="2026-06-01" class="search-input w-32 text-xs" style="padding-left:12px">
+          <span class="text-xs text-slate-400">至</span>
+          <input type="date" value="2026-06-08" class="search-input w-32 text-xs" style="padding-left:12px">
+          <button class="btn btn-outline btn-sm">查询</button>
+          <button class="btn btn-outline btn-sm">清空</button>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn btn-outline btn-sm">导出</button>
+          <button class="btn btn-outline btn-sm">打印预览</button>
+        </div>
+      </div>
+      <div class="text-xs text-slate-400 mb-2">共查询到 <b class="text-navy-900">47</b> 条事件</div>
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <table class="data-table">
+          <thead><tr><th>事件编号</th><th>事件项目</th><th>所属网格</th><th>事件状态</th><th>上报人</th><th>上报时间</th><th>处理时限</th><th>剩余时限</th><th>处理人</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td class="font-mono text-xs">EVT20260608001</td><td>路面清洁</td><td>网格A-01</td><td><span class="badge badge-red">待处理</span></td><td>张督查</td><td>14:20</td><td>2小时</td><td class="text-amber-600 font-medium">1h 12min</td><td>李队长</td><td><button class="btn btn-outline btn-sm">查看</button></td></tr>
+            <tr><td class="font-mono text-xs">EVT20260608002</td><td>绿化管养</td><td>网格B-01</td><td><span class="badge badge-red">已超时</span></td><td>王督查</td><td>11:05</td><td>1小时</td><td class="text-red-600 font-medium">已超时32min</td><td>赵队长</td><td><button class="btn btn-outline btn-sm">查看</button></td></tr>
+            <tr><td class="font-mono text-xs">EVT20260607015</td><td>垃圾清运</td><td>网格A-02</td><td><span class="badge badge-amber">审核中</span></td><td>张督查</td><td>昨日 16:30</td><td>2小时</td><td>--</td><td>刘员工</td><td><button class="btn btn-outline btn-sm">查看</button></td></tr>
+            <tr><td class="font-mono text-xs">EVT20260607012</td><td>公厕运营</td><td>网格A-01</td><td><span class="badge badge-green">已处理</span></td><td>陈督查</td><td>昨日 09:20</td><td>3小时</td><td>--</td><td>周员工</td><td><button class="btn btn-outline btn-sm">查看</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 5: ORG MANAGEMENT ==================== -->
+  <div id="page-org" class="page p-6">
+    <div class="mb-6">
+      <h1 class="text-xl font-bold text-navy-900">机构管理</h1>
+      <p class="text-sm text-slate-500 mt-1">管理组织架构、人员分配与离职处理</p>
+    </div>
+
+    <div class="grid grid-cols-3 gap-4">
+      <!-- Org Tree -->
+      <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-xs font-semibold text-slate-600">组织架构</div>
+          <div class="flex gap-1">
+            <button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:11px">展开</button>
+            <button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:11px">添加</button>
+          </div>
+        </div>
+        <div class="space-y-0.5 text-xs">
+          <div class="org-tree-label font-semibold">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" class="text-blue-500"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            海口龙马环卫公司
+          </div>
+          <div class="org-tree-node">
+            <div class="org-tree-label active">
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" class="text-slate-400"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              生产运营部
+            </div>
+            <div class="org-tree-node">
+              <div class="org-tree-label">清扫一部 <span class="text-slate-400 ml-1">(120人)</span></div>
+              <div class="org-tree-label">清扫二部 <span class="text-slate-400 ml-1">(98人)</span></div>
+              <div class="org-tree-label">转运部 <span class="text-slate-400 ml-1">(45人)</span></div>
+              <div class="org-tree-label">机械作业部 <span class="text-slate-400 ml-1">(52人)</span></div>
+            </div>
+            <div class="org-tree-label">
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" class="text-slate-400"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              质检部
+            </div>
+            <div class="org-tree-label">
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" class="text-slate-400"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              综合管理部
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Details -->
+      <div class="col-span-2">
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div class="text-sm font-semibold text-navy-900">生产运营部 - 部门信息</div>
+            <div class="flex gap-2">
+              <button class="btn btn-primary btn-sm">修改信息</button>
+              <button class="btn btn-outline btn-sm">开启绘图</button>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4 text-xs">
+            <div><span class="text-slate-400">部门名称：</span><span class="text-slate-700">生产运营部</span></div>
+            <div><span class="text-slate-400">部门负责人：</span><span class="text-slate-700">张总监</span></div>
+            <div><span class="text-slate-400">上级部门：</span><span class="text-slate-700">海口龙马环卫公司</span></div>
+            <div><span class="text-slate-400">人员数量：</span><span class="text-slate-700">315人</span></div>
+            <div><span class="text-slate-400">下属部门：</span><span class="text-slate-700">4个</span></div>
+            <div><span class="text-slate-400">管辖网格：</span><span class="text-slate-700">网格A-01, A-02, B-01, B-02</span></div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 p-5 mt-4">
+          <div class="flex items-center justify-between mb-4">
+            <div class="text-sm font-semibold text-navy-900">部门人员</div>
+            <div class="flex gap-2">
+              <input type="text" placeholder="搜索人员" class="search-input w-40 text-xs">
+              <button class="btn btn-outline btn-sm">离职处理</button>
+            </div>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>姓名</th><th>职位</th><th>联系电话</th><th>状态</th><th>入职日期</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr><td>张总监</td><td>部门负责人</td><td>138****1001</td><td><span class="badge badge-green">在岗</span></td><td>2022-03-15</td><td><button class="btn btn-outline btn-sm">查看</button></td></tr>
+              <tr><td>李队长</td><td>区域队长</td><td>139****2202</td><td><span class="badge badge-green">在岗</span></td><td>2023-01-10</td><td><button class="btn btn-outline btn-sm">查看</button></td></tr>
+              <tr><td>王建国</td><td>清扫员</td><td>138****5521</td><td><span class="badge badge-green">在岗</span></td><td>2024-01-15</td><td><button class="btn btn-outline btn-sm">查看</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 6: REPORTS ==================== -->
+  <div id="page-reports" class="page p-6">
+    <div class="mb-6">
+      <h1 class="text-xl font-bold text-navy-900">报表统计</h1>
+      <p class="text-sm text-slate-500 mt-1">各业务维度统计报表查询与导出</p>
+    </div>
+
+    <!-- Report Cards Grid -->
+    <div class="grid grid-cols-4 gap-4">
+      <div class="stat-card hover:border-blue-300 cursor-pointer group">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#dc2626" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <div class="text-sm font-semibold text-navy-900 group-hover:text-blue-600">事件考核报表</div>
+            <div class="text-[10px] text-slate-400">考核日/月结算</div>
+          </div>
+        </div>
+        <div class="text-[11px] text-slate-500">事件处理考核统计，包含日报表和月报表</div>
+      </div>
+
+      <div class="stat-card hover:border-blue-300 cursor-pointer group">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <div class="text-sm font-semibold text-navy-900 group-hover:text-blue-600">考勤统计报表</div>
+            <div class="text-[10px] text-slate-400">考勤日/月报表</div>
+          </div>
+        </div>
+        <div class="text-[11px] text-slate-500">人员考勤统计，应到/实到/请假/旷工/迟到</div>
+      </div>
+
+      <div class="stat-card hover:border-blue-300 cursor-pointer group">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M8 17h.01M12 17h.01M16 17h.01M3 13h18M5 17h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke="#0d9488" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <div class="text-sm font-semibold text-navy-900 group-hover:text-blue-600">车辆作业统计</div>
+            <div class="text-[10px] text-slate-400">车辆日报表</div>
+          </div>
+        </div>
+        <div class="text-[11px] text-slate-500">车辆出车/行驶里程/作业里程/油耗统计</div>
+      </div>
+
+      <div class="stat-card hover:border-blue-300 cursor-pointer group">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M11 3.05A9.001 9.001 0 1020.949 13H11V3.05z" stroke="#d97706" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.489 9H15V3.511A9.009 9.009 0 0120.489 9z" stroke="#d97706" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <div class="text-sm font-semibold text-navy-900 group-hover:text-blue-600">事件统计报表</div>
+            <div class="text-[10px] text-slate-400">事件汇总分析</div>
+          </div>
+        </div>
+        <div class="text-[11px] text-slate-500">事件上报/处理/超时/扣分综合统计</div>
+      </div>
+
+      <div class="stat-card hover:border-blue-300 cursor-pointer group">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" stroke="#16a34a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <div class="text-sm font-semibold text-navy-900 group-hover:text-blue-600">公厕作业统计</div>
+            <div class="text-[10px] text-slate-400">公厕日报表</div>
+          </div>
+        </div>
+        <div class="text-[11px] text-slate-500">公厕保洁作业完成率与质量统计</div>
+      </div>
+
+      <div class="stat-card hover:border-blue-300 cursor-pointer group">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" stroke="#4f46e5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" stroke="#4f46e5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <div class="text-sm font-semibold text-navy-900 group-hover:text-blue-600">平台日报表</div>
+            <div class="text-[10px] text-slate-400">综合运营日报</div>
+          </div>
+        </div>
+        <div class="text-[11px] text-slate-500">车辆/考勤/事件运营数据每日汇总</div>
+      </div>
+
+      <div class="stat-card hover:border-blue-300 cursor-pointer group">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="#ea580c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <div class="text-sm font-semibold text-navy-900 group-hover:text-blue-600">车辆油耗统计</div>
+            <div class="text-[10px] text-slate-400">油耗日报表</div>
+          </div>
+        </div>
+        <div class="text-[11px] text-slate-500">车辆油耗数据统计与异常分析</div>
+      </div>
+
+      <div class="stat-card hover:border-blue-300 cursor-pointer group">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <div class="text-sm font-semibold text-navy-900 group-hover:text-blue-600">路段作业统计</div>
+            <div class="text-[10px] text-slate-400">路段作业分析</div>
+          </div>
+        </div>
+        <div class="text-[11px] text-slate-500">路段作业里程与完成率统计</div>
+      </div>
+
+      <div class="stat-card hover:border-blue-300 cursor-pointer group">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 0010 0l-3-9M6 7V4m0 3h6m0 0l3 9a5.002 5.002 0 0010 0l-3-9m-4 0V4" stroke="#db2777" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <div class="text-sm font-semibold text-navy-900 group-hover:text-blue-600">车辆加油记录</div>
+            <div class="text-[10px] text-slate-400">加油明细</div>
+          </div>
+        </div>
+        <div class="text-[11px] text-slate-500">车辆加油时间/金额/升数记录</div>
+      </div>
+
+      <div class="stat-card hover:border-blue-300 cursor-pointer group">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#475569" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <div class="text-sm font-semibold text-navy-900 group-hover:text-blue-600">成本统计报表</div>
+            <div class="text-[10px] text-slate-400">成本分析</div>
+          </div>
+        </div>
+        <div class="text-[11px] text-slate-500">人力/机械/运营成本占比与趋势</div>
+      </div>
+
+      <div class="stat-card hover:border-blue-300 cursor-pointer group">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-lg bg-cyan-50 flex items-center justify-center">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke="#0891b2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <div class="text-sm font-semibold text-navy-900 group-hover:text-blue-600">司机异常申请</div>
+            <div class="text-[10px] text-slate-400">异常处理</div>
+          </div>
+        </div>
+        <div class="text-[11px] text-slate-500">司机作业异常记录与申请审批</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 7: COMPANY MANAGEMENT ==================== -->
+  <div id="page-company" class="page p-6">
+    <div class="mb-6">
+      <h1 class="text-xl font-bold text-navy-900">公司管理</h1>
+      <p class="text-sm text-slate-500 mt-1">管理产业公司、子公司及部门架构</p>
+    </div>
+    <div class="flex border-b border-slate-200 mb-6">
+      <div class="tab-btn active" onclick="switchSubTab(this,'company-tab-dept')">公司部门管理</div>
+      <div class="tab-btn" onclick="switchSubTab(this,'company-tab-parent')">总公司信息维护</div>
+      <div class="tab-btn" onclick="switchSubTab(this,'company-tab-sub')">子公司管理</div>
+      <div class="tab-btn" onclick="switchSubTab(this,'company-tab-admin')">子公司管理员</div>
+    </div>
+
+    <!-- 公司部门管理 -->
+    <div id="company-tab-dept" class="sub-tab active">
+      <div class="grid grid-cols-3 gap-4">
+        <div class="bg-white rounded-xl border border-slate-200 p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="text-xs font-semibold text-slate-600">组织架构</div>
+            <div class="flex gap-1">
+              <button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:11px">展开全部</button>
+            </div>
+          </div>
+          <div class="space-y-0.5 text-xs">
+            <div class="org-tree-label font-semibold">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" class="text-blue-500"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              福龙马集团
+            </div>
+            <div class="org-tree-node">
+              <div class="org-tree-label active">
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" class="text-amber-500"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                海口龙马环卫
+              </div>
+              <div class="org-tree-node">
+                <div class="org-tree-label">生产运营部</div>
+                <div class="org-tree-label">质检部</div>
+                <div class="org-tree-label">综合管理部</div>
+                <div class="org-tree-label">财务部</div>
+              </div>
+              <div class="org-tree-label">
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" class="text-amber-500"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                龙环环卫
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-span-2">
+          <div class="bg-white rounded-xl border border-slate-200 p-5">
+            <div class="flex items-center justify-between mb-4">
+              <div class="text-sm font-semibold text-navy-900">海口龙马环卫 - 基本信息</div>
+              <button class="btn btn-primary btn-sm">编辑</button>
+            </div>
+            <div class="grid grid-cols-2 gap-4 text-xs">
+              <div><span class="text-slate-400">公司名称：</span><span class="text-slate-700">海口龙马环卫有限公司</span></div>
+              <div><span class="text-slate-400">公司属性：</span><span class="text-slate-700">子公司</span></div>
+              <div><span class="text-slate-400">公司分类：</span><span class="text-slate-700">环卫运营</span></div>
+              <div><span class="text-slate-400">公司规模：</span><span class="text-slate-700">中型(500人以下)</span></div>
+              <div><span class="text-slate-400">注册资本：</span><span class="text-slate-700">1000万元</span></div>
+              <div><span class="text-slate-400">联系人：</span><span class="text-slate-700">陈经理 138****0001</span></div>
+              <div><span class="text-slate-400">公司地址：</span><span class="text-slate-700">海南省海口市龙华区XX路</span></div>
+              <div><span class="text-slate-400">经营范围：</span><span class="text-slate-700">城市道路清扫保洁、垃圾清运</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 总公司信息维护 -->
+    <div id="company-tab-parent" class="sub-tab">
+      <div class="bg-white rounded-xl border border-slate-200 p-6 max-w-2xl">
+        <div class="text-sm font-semibold text-navy-900 mb-4">总公司信息</div>
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="text-xs text-slate-500 block mb-1">公司名称</label><input type="text" value="福龙马集团股份有限公司" class="search-input w-full text-xs" style="padding-left:12px"></div>
+            <div><label class="text-xs text-slate-500 block mb-1">联系电话</label><input type="text" value="0592-XXXXXXX" class="search-input w-full text-xs" style="padding-left:12px"></div>
+          </div>
+          <div><label class="text-xs text-slate-500 block mb-1">公司地址</label><input type="text" value="福建省龙岩市新罗区XX路XX号" class="search-input w-full text-xs" style="padding-left:12px"></div>
+          <div><label class="text-xs text-slate-500 block mb-1">经营范围</label><textarea class="search-input w-full text-xs" style="padding-left:12px;padding-top:8px;height:60px" rows="2">环卫专用车辆、环保设备研发制造，环卫项目投资运营</textarea></div>
+          <div class="pt-2"><button class="btn btn-primary">保存修改</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 子公司管理 -->
+    <div id="company-tab-sub" class="sub-tab">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <input type="text" placeholder="公司名称" class="search-input w-40 text-xs">
+          <button class="btn btn-outline btn-sm">查询</button>
+        </div>
+        <button class="btn btn-primary btn-sm">新增子公司</button>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <table class="data-table">
+          <thead><tr><th>公司名称</th><th>公司属性</th><th>公司分类</th><th>联系人</th><th>联系电话</th><th>子公司管理员</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td class="font-medium">海口龙马环卫有限公司</td><td>子公司</td><td>环卫运营</td><td>陈经理</td><td>138****0001</td><td>admin_hklm</td><td class="flex gap-2"><button class="btn btn-outline btn-sm">编辑</button><button class="btn btn-outline btn-sm">管理员</button></td></tr>
+            <tr><td class="font-medium">龙环环卫有限公司</td><td>子公司</td><td>环卫运营</td><td>林经理</td><td>139****0002</td><td>admin_lh</td><td class="flex gap-2"><button class="btn btn-outline btn-sm">编辑</button><button class="btn btn-outline btn-sm">管理员</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 子公司管理员 -->
+    <div id="company-tab-admin" class="sub-tab">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <select class="search-input text-xs w-40" style="padding-left:12px"><option>选择子公司</option><option>海口龙马环卫</option><option>龙环环卫</option></select>
+          <button class="btn btn-outline btn-sm">查询</button>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <table class="data-table">
+          <thead><tr><th>子公司</th><th>管理员账号</th><th>姓名</th><th>联系电话</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>海口龙马环卫</td><td class="font-mono">admin_hklm</td><td>陈经理</td><td>138****0001</td><td><span class="badge badge-green">正常</span></td><td class="flex gap-2"><button class="btn btn-outline btn-sm">重置密码</button><button class="btn btn-danger btn-sm">禁用</button></td></tr>
+            <tr><td>龙环环卫</td><td class="font-mono">admin_lh</td><td>林经理</td><td>139****0002</td><td><span class="badge badge-green">正常</span></td><td class="flex gap-2"><button class="btn btn-outline btn-sm">重置密码</button><button class="btn btn-danger btn-sm">禁用</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 8: DATA ANALYSIS ==================== -->
+  <div id="page-analysis" class="page p-6">
+    <div class="mb-6">
+      <h1 class="text-xl font-bold text-navy-900">数据分析</h1>
+      <p class="text-sm text-slate-500 mt-1">财务数据与运营指标分析</p>
+    </div>
+    <div class="flex border-b border-slate-200 mb-6">
+      <div class="tab-btn active">财务模块</div>
+    </div>
+
+    <!-- Financial Overview -->
+    <div class="grid grid-cols-4 gap-4 mb-6">
+      <div class="stat-card">
+        <div class="text-xs text-slate-500 mb-1">年度合同金额</div>
+        <div class="text-2xl font-bold text-navy-900">2,580<span class="text-sm font-normal text-slate-400">万</span></div>
+        <div class="text-[10px] text-green-600 mt-1">+5.2% 同比</div>
+      </div>
+      <div class="stat-card">
+        <div class="text-xs text-slate-500 mb-1">累计回款</div>
+        <div class="text-2xl font-bold text-blue-600">1,890<span class="text-sm font-normal text-slate-400">万</span></div>
+        <div class="text-[10px] text-slate-400 mt-1">回款率 73.3%</div>
+      </div>
+      <div class="stat-card">
+        <div class="text-xs text-slate-500 mb-1">年度成本</div>
+        <div class="text-2xl font-bold text-amber-600">1,620<span class="text-sm font-normal text-slate-400">万</span></div>
+        <div class="text-[10px] text-red-600 mt-1">+3.8% 同比</div>
+      </div>
+      <div class="stat-card">
+        <div class="text-xs text-slate-500 mb-1">利润率</div>
+        <div class="text-2xl font-bold text-green-600">37.2<span class="text-sm font-normal text-slate-400">%</span></div>
+        <div class="text-[10px] text-green-600 mt-1">+1.5% 同比</div>
+      </div>
+    </div>
+
+    <!-- 回款明细 -->
+    <div class="bg-white rounded-xl border border-slate-200 p-5">
+      <div class="flex items-center justify-between mb-4">
+        <div class="text-sm font-semibold text-navy-900">回款明细</div>
+        <div class="flex items-center gap-2">
+          <select class="search-input text-xs w-32" style="padding-left:12px"><option>2026年</option><option>2025年</option></select>
+          <button class="btn btn-outline btn-sm">导出</button>
+        </div>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>回款月份</th><th>合同金额</th><th>回款金额</th><th>回款率</th><th>扣款金额</th><th>备注</th></tr></thead>
+        <tbody>
+          <tr><td>2026-06</td><td>215万</td><td class="font-medium text-blue-600">180万</td><td><div class="flex items-center gap-2"><div class="w-16 bg-slate-100 rounded-full h-1.5"><div class="bg-green-500 h-1.5 rounded-full" style="width:83.7%"></div></div><span class="text-xs">83.7%</span></div></td><td class="text-red-600">12万</td><td>--</td></tr>
+          <tr><td>2026-05</td><td>215万</td><td class="font-medium text-blue-600">198万</td><td><div class="flex items-center gap-2"><div class="w-16 bg-slate-100 rounded-full h-1.5"><div class="bg-green-500 h-1.5 rounded-full" style="width:92.1%"></div></div><span class="text-xs">92.1%</span></div></td><td class="text-red-600">8万</td><td>--</td></tr>
+          <tr><td>2026-04</td><td>215万</td><td class="font-medium text-blue-600">205万</td><td><div class="flex items-center gap-2"><div class="w-16 bg-slate-100 rounded-full h-1.5"><div class="bg-green-500 h-1.5 rounded-full" style="width:95.3%"></div></div><span class="text-xs">95.3%</span></div></td><td class="text-red-600">3万</td><td>--</td></tr>
+          <tr><td>2026-03</td><td>215万</td><td class="font-medium text-blue-600">190万</td><td><div class="flex items-center gap-2"><div class="w-16 bg-slate-100 rounded-full h-1.5"><div class="bg-blue-500 h-1.5 rounded-full" style="width:88.4%"></div></div><span class="text-xs">88.4%</span></div></td><td class="text-red-600">15万</td><td>含春节假期调整</td></tr>
+          <tr><td>2026-02</td><td>215万</td><td class="font-medium text-blue-600">210万</td><td><div class="flex items-center gap-2"><div class="w-16 bg-slate-100 rounded-full h-1.5"><div class="bg-green-500 h-1.5 rounded-full" style="width:97.7%"></div></div><span class="text-xs">97.7%</span></div></td><td class="text-red-600">2万</td><td>--</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const pageMap = {
+  'dashboard': { page: 'page-dashboard', name: '数据看板' },
+  'basic-info': { page: 'page-basic-info', name: '基础信息' },
+  'area': { page: 'page-area', name: '区域管理' },
+  'operations': { page: 'page-operations', name: '作业中心' },
+  'org': { page: 'page-org', name: '机构管理' },
+  'reports': { page: 'page-reports', name: '报表统计' },
+  'company': { page: 'page-company', name: '公司管理' },
+  'analysis': { page: 'page-analysis', name: '数据分析' },
+};
+
+function switchPage(key) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+
+  const info = pageMap[key];
+  if (info) {
+    document.getElementById(info.page).classList.add('active');
+    document.getElementById('breadcrumb-current').textContent = info.name;
+  }
+
+  const items = document.querySelectorAll('.sidebar-item');
+  items.forEach(item => {
+    if (item.getAttribute('onclick') === `switchPage('${key}')`) {
+      item.classList.add('active');
+    }
+  });
+}
+
+function switchSubTab(tabEl, tabId) {
+  const parent = tabEl.parentElement;
+  parent.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  tabEl.classList.add('active');
+
+  const container = parent.parentElement;
+  container.querySelectorAll('.sub-tab').forEach(s => s.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+}
+</script>
+
+</body>
+</html>
