@@ -80,7 +80,8 @@ All checks are **objective and pixel-level** — no aesthetic judgment.
       "evidence": "extends 60px beyond viewport right",
       "suggestion": "reduce width, constrain parent, or set overflow-x:hidden on the right container"
     }
-  ]
+  ],
+  "report_path": "E:\\CCproject\\.scratch\\audit-reports\\dashboard_20260618-131915.json"
 }
 ```
 
@@ -90,6 +91,21 @@ Each issue includes:
 - `geometry` or `computed` — exact pixel measurements or computed-style values that triggered the issue
 - `evidence` — human-readable one-liner of what was measured
 - `suggestion` — machine-actionable hint to feed back to the generator
+
+## Report Persistence
+
+**When `pass: false`** (issues found), the full JSON is also saved to disk:
+
+- **Location**: `<repo>/.scratch/audit-reports/` (gitignored — ephemeral, not committed)
+- **Filename**: `<input-stem>_<YYYYMMDD-HHMMSS>.json` (e.g., `dashboard_20260618-131915.json`)
+- **Path is surfaced three ways**:
+  1. `report_path` field appended to the JSON output
+  2. `Report saved: <path>` line printed to **stderr** (so stdout stays pure JSON for piping)
+  3. The file itself on disk for later inspection
+
+**When `pass: true`** — nothing is saved, no `report_path` field, no stderr line. A clean run leaves no trace.
+
+This means each failed audit produces a timestamped artifact you can diff against the next iteration's report, or hand to the upstream reflection loop as a file rather than a pipe.
 
 ## Workflow (Generate → Check → Fix loop)
 

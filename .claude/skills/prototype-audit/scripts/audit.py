@@ -17,8 +17,9 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
+REPO_ROOT = Path(__file__).resolve().parents[4]
 REQUIREMENTS_REL = ".claude/skills/prototype-audit/scripts/requirements.txt"
+REPORTS_DIR = REPO_ROOT / ".scratch" / "audit-reports"
 
 
 def emit(obj, pretty=False):
@@ -31,6 +32,40 @@ def emit(obj, pretty=False):
 def env_error(error_kind, fix):
     emit({"pass": False, "error": error_kind, "fix": fix, "issues": []}, pretty=False)
     sys.exit(2)
+
+
+def save_report(output, target_arg):
+    """Persist the JSON to .scratch/audit-reports/ when issues are found.
+
+    Filename: <input-stem>_<YYYYMMDD-HHMMSS>.json
+    Returns the absolute path string, or None if nothing was saved.
+    """
+    if output["pass"]:
+        return None
+    try:
+        REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        return None
+    stem = "report"
+    try:
+        from urllib.parse import urlparse
+        u = urlparse(target_arg)
+        if u.scheme == "file" and u.path:
+            stem = Path(u.path).stem
+        elif u.scheme in ("http", "https"):
+            stem = (u.path.rstrip("/").rsplit("/", 1)[-1] or u.netloc).split(".")[0]
+        else:
+            stem = Path(target_arg).stem
+    except Exception:
+        pass
+    stem = "".join(c if c.isalnum() or c in "-_" else "_" for c in stem)[:80] or "report"
+    ts = time.strftime("%Y%m%d-%H%M%S", time.localtime())
+    path = REPORTS_DIR / f"{stem}_{ts}.json"
+    try:
+        path.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
+        return str(path)
+    except Exception:
+        return None
 
 
 def parse_viewport(s):
@@ -366,6 +401,10 @@ def run_audit(target, viewport, timeout, pretty, file_arg):
         },
         "issues": issues,
     }
+    saved = save_report(output, target)
+    if saved:
+        output["report_path"] = saved
+        print(f"Report saved: {saved}", file=sys.stderr)
     emit(output, pretty=pretty)
     return 0 if output["pass"] else 1
 
