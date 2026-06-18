@@ -119,6 +119,22 @@ When invoked as part of a closed loop with an upstream generator skill:
 
 Between iterations, **deduplicate** issues by `(type, selector)` — if the same selector triggers the same issue across runs, it counts as one persistent problem (not a new one). Take the highest-severity version.
 
+## Marking Intentional Overlays (`data-overlay`)
+
+Many designs have elements that **intentionally** overlap or extend beyond the viewport — a centered label on top of a ring chart, decorative corner brackets, a horizontally scrolling card strip, a scanline animation overlay. Without context the auditor reports these as violations.
+
+To suppress false positives, add the `data-overlay` attribute to the element (or any ancestor):
+
+```html
+<div class="fleet-strip" data-overlay> ... </div>      <!-- covers all child cards -->
+<div class="scanline" data-overlay></div>
+<span class="corner tl" data-overlay></span>
+```
+
+The auditor checks `el.closest('[data-overlay]')` — so marking a container suppresses checks for everything inside it. Applies to both `overflow` and `overlap` checks.
+
+Use sparingly: only for elements whose out-of-flow position is by design. If you find yourself adding `data-overlay` to "make the audit pass", that's a signal the layout actually has a problem.
+
 ## Anti-patterns (explicitly NOT in scope)
 
 - ❌ Aesthetic judgments — "this looks ugly", "this color is unappealing"

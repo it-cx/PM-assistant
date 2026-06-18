@@ -119,11 +119,12 @@ SCAN_JS = r"""
     if (!color) return null;
     const m = color.match(/rgba?\(([^)]+)\)/);
     if (!m) return null;
-    return m[1].split(',').map(s => parseFloat(s.trim())).slice(0, 3);
+    const parts = m[1].split(',').map(s => parseFloat(s.trim()));
+    return { r: parts[0], g: parts[1], b: parts[2], a: parts.length > 3 ? parts[3] : 1 };
   };
 
   const relLuminance = (rgb) => {
-    const a = rgb.map(v => {
+    const a = [rgb.r, rgb.g, rgb.b].map(v => {
       v /= 255;
       return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
     });
@@ -136,15 +137,31 @@ SCAN_JS = r"""
     return (hi + 0.05) / (lo + 0.05);
   };
 
+  // Composite a translucent fg color over an opaque bg (porter-duff over).
+  const composite = (fg, bg) => ({
+    r: fg.r * fg.a + bg.r * (1 - fg.a),
+    g: fg.g * fg.a + bg.g * (1 - fg.a),
+    b: fg.b * fg.a + bg.b * (1 - fg.a),
+    a: 1
+  });
+
+  // Walk up to find the effective opaque background, compositing semi-transparent layers.
   const findBg = (el) => {
+    const stack = [];
     let cur = el;
     while (cur && cur.nodeType === 1) {
       const s = getComputedStyle(cur);
       const bg = colorToRgb(s.backgroundColor);
-      if (bg && (bg[0] + bg[1] + bg[2]) > 0) return bg;
+      if (bg) stack.push(bg);
+      if (bg && bg.a >= 0.99) break;
       cur = cur.parentElement;
     }
-    return [255, 255, 255];
+    // Composite from the bottom up; default backdrop is opaque white.
+    let result = { r: 255, g: 255, b: 255, a: 1 };
+    for (let i = stack.length - 1; i >= 0; i--) {
+      result = composite(stack[i].a < 1 ? stack[i] : { ...stack[i], a: 1 }, result);
+    }
+    return result;
   };
 
   const all = Array.from(document.querySelectorAll('*'));
@@ -152,6 +169,7 @@ SCAN_JS = r"""
 
   // 1. overflow
   for (const el of vis) {
+    if (el.closest('[data-overlay]')) continue;
     const r = el.getBoundingClientRect();
     if (r.right > VW + 1) {
       issues.push({
@@ -258,7 +276,7 @@ SCAN_JS = r"""
         if (area <= 4) continue;
         const za = getComputedStyle(a).zIndex, zb = getComputedStyle(b).zIndex;
         if (za !== 'auto' && zb !== 'auto' && za !== zb) continue;
-        if (a.hasAttribute('data-overlay') || b.hasAttribute('data-overlay')) continue;
+        if (a.closest('[data-overlay]') || b.closest('[data-overlay]')) continue;
         issues.push({
           type: 'overlap', severity: area > 1000 ? 'high' : 'medium',
           selector: cssPath(a), selector_other: cssPath(b),
@@ -286,7 +304,7 @@ SCAN_JS = r"""
       issues.push({
         type: 'contrast', severity: ratio < 3 ? 'high' : 'medium',
         selector: cssPath(el),
-        computed: { fg: s.color, bg: `rgb(${bg.join(',')})`, ratio: Math.round(ratio * 10) / 10 },
+        computed: { fg: s.color, bg: `rgb(${Math.round(bg.r)},${Math.round(bg.g)},${Math.round(bg.b)})`, ratio: Math.round(ratio * 10) / 10 },
         evidence: `text contrast ${ratio.toFixed(2)} below WCAG AA (4.5)`,
         suggestion: ratio < 3
           ? 'significantly increase text contrast (current ratio is dangerously low)'
