@@ -471,7 +471,7 @@
   <!-- ====================== 顶栏 ====================== -->
   <header class="topbar">
     <div class="brand">
-      <div class="brand-mark">
+      <div class="brand-mark" data-overlay>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 2 L4 7 V17 L12 22 L20 17 V7 Z"/>
           <path d="M12 6 L8 8.5 V13.5 L12 16 L16 13.5 V8.5 Z"/>
@@ -507,8 +507,8 @@
 
     <!-- HERO: 今日清扫里程 -->
     <div class="panel hero reveal" style="animation-delay:0s">
-      <span class="corner tl"></span><span class="corner tr"></span>
-      <span class="corner bl"></span><span class="corner br"></span>
+      <span data-overlay class="corner tl"></span><span data-overlay class="corner tr"></span>
+      <span data-overlay class="corner bl"></span><span data-overlay class="corner br"></span>
       <div class="hero-head">
         <span class="hero-eyebrow">CORE OUTPUT · 核心产出</span>
         <span class="hero-period" id="heroPeriod">今日 · 2026-06-16</span>
@@ -550,7 +550,7 @@
 
     <!-- 能效核心 - 大圆环 -->
     <div class="panel efficiency reveal" style="animation-delay:0.08s">
-      <span class="corner tl"></span><span class="corner br"></span>
+      <span data-overlay class="corner tl"></span><span data-overlay class="corner br"></span>
       <div class="efficiency-head">
         <div class="efficiency-title">
           <span class="efficiency-title-bar"></span>
@@ -560,7 +560,7 @@
       </div>
       <div class="efficiency-ring">
         <div id="effRing" class="efficiency-ring-chart"></div>
-        <div class="efficiency-center">
+        <div class="efficiency-center" data-overlay>
           <div class="efficiency-val" id="effVal">0</div>
           <div class="efficiency-unit">km / kWh</div>
         </div>
@@ -573,7 +573,7 @@
 
     <!-- 车队状态条 -->
     <div class="panel fleet-status reveal" style="animation-delay:0.12s">
-      <span class="corner tl"></span>
+      <span data-overlay class="corner tl"></span>
       <div class="fleet-status-head">
         <span class="fleet-status-label">FLEET</span>
         <span class="num" style="font-size:10px;color:var(--text-sec)">在线率</span>
@@ -593,7 +593,7 @@
 
     <!-- 安全事件紧凑块 -->
     <div class="panel safety-block reveal" style="animation-delay:0.16s">
-      <span class="corner tr"></span>
+      <span data-overlay class="corner tr"></span>
       <div class="safety-cell">
         <div class="safety-cell-label">告警</div>
         <div class="safety-cell-val alert" id="safetyAlert">0</div>
@@ -609,9 +609,9 @@
 
     <!-- 作业节奏 24h 大图 -->
     <div class="panel rhythm reveal" style="animation-delay:0.2s">
-      <div class="scanline"></div>
-      <span class="corner tl"></span><span class="corner tr"></span>
-      <span class="corner bl"></span><span class="corner br"></span>
+      <div class="scanline" data-overlay></div>
+      <span data-overlay class="corner tl"></span><span data-overlay class="corner tr"></span>
+      <span data-overlay class="corner bl"></span><span data-overlay class="corner br"></span>
       <div class="panel-head">
         <div class="panel-title">
           <span class="panel-title-bar"></span>
@@ -639,7 +639,7 @@
 
     <!-- 任务画像雷达 -->
     <div class="panel radar-panel reveal" style="animation-delay:0.24s">
-      <span class="corner tl"></span><span class="corner br"></span>
+      <span data-overlay class="corner tl"></span><span data-overlay class="corner br"></span>
       <div class="panel-head">
         <div class="panel-title">
           <span class="panel-title-bar" style="background:var(--amber);box-shadow:0 0 6px var(--amber)"></span>
@@ -654,7 +654,7 @@
 
     <!-- 资源补给节奏 -->
     <div class="panel resource-rhythm reveal" style="animation-delay:0.28s">
-      <span class="corner tl"></span><span class="corner br"></span>
+      <span data-overlay class="corner tl"></span><span data-overlay class="corner br"></span>
       <div class="panel-head">
         <div class="panel-title">
           <span class="panel-title-bar" style="background:var(--violet);box-shadow:0 0 6px var(--violet)"></span>
@@ -711,7 +711,7 @@
 
     <!-- 事件流 -->
     <div class="panel events reveal" style="animation-delay:0.32s">
-      <span class="corner tl"></span><span class="corner br"></span>
+      <span data-overlay class="corner tl"></span><span data-overlay class="corner br"></span>
       <div class="panel-head">
         <div class="panel-title">
           <span class="panel-title-bar" style="background:var(--rose);box-shadow:0 0 6px var(--rose)"></span>
@@ -726,8 +726,8 @@
 
     <!-- 车队卡片 -->
     <div class="panel fleet-strip-panel reveal" style="animation-delay:0.36s">
-      <span class="corner tl"></span><span class="corner tr"></span>
-      <span class="corner bl"></span><span class="corner br"></span>
+      <span data-overlay class="corner tl"></span><span data-overlay class="corner tr"></span>
+      <span data-overlay class="corner bl"></span><span data-overlay class="corner br"></span>
       <div class="panel-head">
         <div class="panel-title">
           <span class="panel-title-bar" style="background:var(--amber);box-shadow:0 0 6px var(--amber)"></span>
@@ -736,7 +736,7 @@
         <span class="panel-tag">14 台 · 在线 13 · 离线 1</span>
       </div>
       <div class="panel-body" style="padding-top:6px">
-        <div class="fleet-strip" id="fleetStrip"></div>
+        <div class="fleet-strip" id="fleetStrip" data-overlay></div>
       </div>
     </div>
 
